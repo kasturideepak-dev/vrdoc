@@ -1,0 +1,25 @@
+HOSTINGER UPLOAD — VR Doctors CMS
+================================
+
+Upload this folder into public_html (or public_html/vrdoc).
+
+You must see: install.php, app/, views/, assets/, public/, .htaccess
+
+If /assets/ images 404 after upload:
+   SSH:  cd public_html/vrdoc/public && ln -s ../assets assets
+   If File Manager has no SSH: copy assets/ into public/assets/
+
+POST-UPLOAD MIGRATIONS (SSH or Hostinger terminal):
+   php database/migrate-ai.php
+   php database/migrate-blog.php
+
+Fresh install only:
+   https://YOUR-DOMAIN/install.php
+
+Already installed:
+   Keep existing storage/installed.lock and config/database.local.php
+   Do NOT overwrite those on the server.
+
+Admin login:
+   admin@vrdoctors.in
+   ChangeMe_VRDR2026  (change after login)

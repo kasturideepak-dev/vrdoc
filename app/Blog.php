@@ -1,0 +1,125 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Blog seeding and helpers.
+ */
+final class Blog
+{
+    public static function ensureCategories(): void
+    {
+        $cats = [
+            ['name' => 'NEET Coaching', 'slug' => 'neet-coaching', 'description' => 'NEET preparation tips, strategies and exam updates.'],
+            ['name' => 'Admissions', 'slug' => 'admissions', 'description' => 'Admission guidance, eligibility and counselling support.'],
+            ['name' => 'Campus Life', 'slug' => 'campus-life', 'description' => 'Residential facilities, student life and campus updates.'],
+        ];
+        foreach ($cats as $c) {
+            $exists = Database::one('SELECT id FROM blog_categories WHERE slug = ?', [$c['slug']]);
+            if (!$exists) {
+                Database::insert('blog_categories', $c);
+            }
+        }
+    }
+
+    public static function ensurePosts(): void
+    {
+        self::ensureCategories();
+        $authorId = (int) (Database::one('SELECT id FROM users ORDER BY id LIMIT 1')['id'] ?? 0);
+        $posts = self::demoPosts();
+        foreach ($posts as $p) {
+            $exists = Database::one('SELECT id FROM blog_posts WHERE slug = ? AND deleted_at IS NULL', [$p['slug']]);
+            if ($exists) {
+                continue;
+            }
+            $cat = Database::one('SELECT id FROM blog_categories WHERE slug = ?', [$p['category_slug']]);
+            $id = Database::insert('blog_posts', [
+                'title' => $p['title'],
+                'slug' => $p['slug'],
+                'excerpt' => $p['excerpt'],
+                'body_html' => $p['body_html'],
+                'featured_image' => $p['featured_image'],
+                'author_id' => $authorId ?: null,
+                'status' => 'published',
+                'published_at' => $p['published_at'],
+            ]);
+            if ($cat) {
+                Database::insert('blog_post_categories', [
+                    'post_id' => $id,
+                    'category_id' => (int) $cat['id'],
+                ]);
+            }
+            $seo = Content::fillCanonical([
+                'seo_title' => $p['title'] . ' | VR Doctors Blog',
+                'meta_description' => $p['excerpt'],
+                'og_image' => $p['featured_image'],
+            ], 'blog/' . $p['slug']);
+            Database::upsertSeo('blog', $id, $seo);
+        }
+    }
+
+    /** @return list<array<string, string>> */
+    private static function demoPosts(): array
+    {
+        $img = static fn (string $file): string => '/assets/img/gallery/' . $file;
+
+        return [
+            [
+                'slug' => 'neet-2026-preparation-roadmap',
+                'category_slug' => 'neet-coaching',
+                'title' => 'NEET 2026 Preparation Roadmap for BiPC Students',
+                'excerpt' => 'A structured month-by-month plan for Class 11 and 12 students targeting NEET 2026 — covering Biology, Physics, Chemistry and revision cycles.',
+                'featured_image' => $img('classroom.jpg'),
+                'published_at' => '2025-08-15 10:00:00',
+                'body_html' => <<<'HTML'
+<p>Preparing for NEET while managing Intermediate board exams is one of the biggest challenges BiPC students face. At VR Doctors Academy, we help students build a <strong>disciplined, exam-oriented routine</strong> from day one.</p>
+<h2>Foundation phase (Class 11)</h2>
+<p>Focus on NCERT Biology line-by-line. Allocate daily slots for Physics numericals and Organic Chemistry mechanisms. Weekly full-length topic tests help identify weak areas early.</p>
+<h2>Intensive phase (Class 12)</h2>
+<p>Shift to MCQ practice with timed drills. Use previous-year NEET papers and institute mock tests. Maintain a mistake notebook — revisiting wrong answers is more valuable than solving new questions blindly.</p>
+<h2>Revision &amp; exam temperament</h2>
+<p>In the final 60 days, reduce new topics. Prioritise high-yield chapters: Human Physiology, Genetics, Thermodynamics, and Coordination Compounds. Sleep, nutrition and a calm mindset matter as much as syllabus coverage.</p>
+<p><strong>Need a personalised study plan?</strong> Speak to our academic counsellors about our Long-Term and Short-Term NEET programmes in Hyderabad.</p>
+HTML,
+            ],
+            [
+                'slug' => 'how-to-choose-neet-residential-college-hyderabad',
+                'category_slug' => 'admissions',
+                'title' => 'How to Choose the Right NEET Residential College in Hyderabad',
+                'excerpt' => 'What parents should evaluate — faculty credentials, daily schedules, hostel safety, mock-test frequency and past results — before enrolling.',
+                'featured_image' => $img('building-hafeezpet.jpg'),
+                'published_at' => '2025-09-01 09:30:00',
+                'body_html' => <<<'HTML'
+<p>Hyderabad offers many coaching options for NEET aspirants. Choosing a <strong>residential programme</strong> is a significant decision — students spend 10–12 months away from home, so the environment must support focus and wellbeing.</p>
+<h2>Academic rigour</h2>
+<p>Look for daily classroom hours, regular assessments, and faculty with proven NEET track records. Ask how doubt-clearing sessions are structured and whether individual mentoring is available.</p>
+<h2>Residential facilities</h2>
+<p>Visit the campus if possible. Check hostel rooms, dining, study halls and security. A structured daily timetable — classes, self-study, recreation — prevents burnout.</p>
+<h2>Results &amp; transparency</h2>
+<p>Request recent rank lists and admission statistics. VR Doctors publishes achiever stories and maintains open communication with parents through PTMs and progress reports.</p>
+<h2>Next steps</h2>
+<p>Book a campus visit at our Hafeezpet, Miyapur or other Hyderabad centres. Our admissions team will walk you through programmes, fees and scholarship options.</p>
+HTML,
+            ],
+            [
+                'slug' => 'life-at-vr-doctors-residential-campus',
+                'category_slug' => 'campus-life',
+                'title' => 'Life at VR Doctors Residential Campus: A Day in the Life',
+                'excerpt' => 'From morning study hours to evening recreation — how our residential students balance academics, discipline and community on campus.',
+                'featured_image' => $img('hostel-room.jpg'),
+                'published_at' => '2025-09-08 11:00:00',
+                'body_html' => <<<'HTML'
+<p>Residential NEET coaching is not just about longer study hours — it is about building habits that last through medical college and beyond. Here is what a typical day looks like for VR Doctors residential students.</p>
+<h2>Morning: Focus &amp; classes</h2>
+<p>Students begin with supervised self-study, followed by subject-wise classroom sessions. Biology, Physics and Chemistry are taught by specialist faculty with emphasis on NCERT and previous-year patterns.</p>
+<h2>Afternoon: Practice &amp; doubt clearing</h2>
+<p>Post-lunch sessions include problem-solving workshops and one-on-one doubt clearing. Weekly tests simulate NEET timing and difficulty.</p>
+<h2>Evening: Balance &amp; community</h2>
+<p>Structured recreation, nutritious meals in our dining halls, and quiet study hours in hostel rooms help students recharge without losing momentum.</p>
+<h2>Parent connect</h2>
+<p>Regular parent-teacher meetings and digital progress updates keep families informed. Many parents tell us the residential environment gives their child the discipline they could not replicate at home.</p>
+<p>Interested in our BiPC + NEET residential programme? <strong>Request a callback</strong> and we will arrange a campus tour.</p>
+HTML,
+            ],
+        ];
+    }
+}

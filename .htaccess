@@ -1,0 +1,16 @@
+DirectoryIndex index.php install.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  RewriteRule ^install/?$ install.php [L,QSA]
+  RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
+
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+ErrorDocument 404 /index.php
