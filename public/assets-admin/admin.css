@@ -391,27 +391,102 @@ textarea { min-height: 96px; resize: vertical; }
   .admin-user span { display: none; }
 }
 
-/* WYSIWYG (Quill) */
+/* WYSIWYG (Quill)
+   Quill mounts onto .wysiwyg-mount, turns THAT element into .ql-container, and
+   inserts .ql-toolbar as a SIBLING before it — both inside label.wysiwyg-field:
+
+     label.wysiwyg-field > div.ql-toolbar.ql-snow
+                         > div.wysiwyg-mount.ql-container.ql-snow > .ql-editor
+
+   So toolbar rules must hang off .wysiwyg-field, never off .wysiwyg-mount.
+   Quill also ships the light "snow" theme (dark icons, white dropdowns and
+   tooltips), all of which need overriding against this dark admin. */
 .wysiwyg-field { display: block; }
 .wysiwyg-mount {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 0 0 10px 10px;
   min-height: 180px;
 }
-.wysiwyg-mount .ql-toolbar {
-  border: 0;
-  border-bottom: 1px solid var(--line);
+.wysiwyg-field .ql-toolbar.ql-snow {
+  border: 1px solid var(--line);
+  border-bottom: 0;
   border-radius: 10px 10px 0 0;
-  background: var(--paper);
+  background: rgba(255, 255, 255, 0.05);
 }
-.wysiwyg-mount .ql-container {
-  border: 0;
+.wysiwyg-mount.ql-container.ql-snow {
+  border-top: 0;
   font-family: var(--font);
   font-size: 14px;
-  min-height: 140px;
 }
 .wysiwyg-mount .ql-editor {
   min-height: 140px;
-  color: var(--ink);
+  color: var(--text);
 }
+.wysiwyg-mount .ql-editor.ql-blank::before {
+  color: var(--muted);
+  font-style: normal;
+}
+.wysiwyg-mount .ql-editor a { color: var(--orange-2); }
+.wysiwyg-mount .ql-editor blockquote {
+  border-left: 3px solid var(--line-2);
+  color: var(--muted);
+  margin: 8px 0;
+  padding-left: 12px;
+}
+.wysiwyg-mount .ql-editor pre,
+.wysiwyg-mount .ql-editor code {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border-radius: 6px;
+}
+
+/* Toolbar icons — snow draws these in #444, invisible on a dark bar. */
+.wysiwyg-field .ql-snow .ql-stroke { stroke: var(--muted); }
+.wysiwyg-field .ql-snow .ql-fill,
+.wysiwyg-field .ql-snow .ql-stroke.ql-fill { fill: var(--muted); }
+.wysiwyg-field .ql-snow .ql-picker { color: var(--muted); }
+.wysiwyg-field .ql-snow button:hover .ql-stroke,
+.wysiwyg-field .ql-snow button:focus .ql-stroke,
+.wysiwyg-field .ql-snow button.ql-active .ql-stroke,
+.wysiwyg-field .ql-snow .ql-picker-label:hover .ql-stroke,
+.wysiwyg-field .ql-snow .ql-picker-label.ql-active .ql-stroke { stroke: var(--orange-2); }
+.wysiwyg-field .ql-snow button:hover .ql-fill,
+.wysiwyg-field .ql-snow button:focus .ql-fill,
+.wysiwyg-field .ql-snow button.ql-active .ql-fill { fill: var(--orange-2); }
+.wysiwyg-field .ql-snow button:hover,
+.wysiwyg-field .ql-snow .ql-picker-label:hover,
+.wysiwyg-field .ql-snow .ql-picker-item:hover,
+.wysiwyg-field .ql-snow .ql-picker-item.ql-selected { color: var(--orange-2); }
+
+/* Heading dropdown panel. */
+.wysiwyg-field .ql-snow .ql-picker-options {
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+.wysiwyg-field .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+  border-color: var(--line-2);
+  color: var(--text);
+}
+.wysiwyg-field .ql-snow .ql-picker-item { color: var(--text); }
+
+/* Link tooltip. */
+.wysiwyg-field .ql-snow .ql-tooltip {
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+.wysiwyg-field .ql-snow .ql-tooltip input[type=text] {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+}
+.wysiwyg-field .ql-snow .ql-tooltip a.ql-action,
+.wysiwyg-field .ql-snow .ql-tooltip a.ql-remove,
+.wysiwyg-field .ql-snow .ql-tooltip a.ql-preview { color: var(--orange-2); }

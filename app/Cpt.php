@@ -46,6 +46,35 @@ final class Cpt
         return $rows;
     }
 
+    /**
+     * Most recently published entries of a type, newest first.
+     *
+     * Used by the sidebar on post layouts, so the entry being viewed is
+     * excluded — a "latest posts" list that includes the current page is noise.
+     */
+    public static function latest(string $typeSlug, int $limit = 5, int $excludeId = 0): array
+    {
+        $type = self::type($typeSlug);
+        if (!$type) {
+            return [];
+        }
+        $limit = max(1, min(20, $limit));
+        $sql = 'SELECT * FROM cpt_entries
+                WHERE post_type_id = ? AND status = "published" AND deleted_at IS NULL';
+        $params = [(int) $type['id']];
+        if ($excludeId > 0) {
+            $sql .= ' AND id <> ?';
+            $params[] = $excludeId;
+        }
+        $sql .= ' ORDER BY COALESCE(published_at, created_at) DESC, id DESC LIMIT ' . $limit;
+        $rows = Database::all($sql, $params);
+        foreach ($rows as &$r) {
+            $r['_type'] = $type;
+            $r['_fields'] = json_decode($r['fields_json'] ?: '{}', true) ?: [];
+        }
+        return $rows;
+    }
+
     public static function entry(string $typeSlug, string $entrySlug): ?array
     {
         $type = self::type($typeSlug);
@@ -341,8 +370,12 @@ final class Cpt
             if (!$type) {
                 return;
             }
+            // Deliberately counts trashed entries too. A trashed row still holds
+            // its slug under the unique key, so skipping them made this retry the
+            // same insert on every request and log a duplicate-key error forever
+            // — and re-seeding an entry the client just deleted is wrong anyway.
             $hasEntry = Database::one(
-                'SELECT id FROM cpt_entries WHERE post_type_id = ? AND deleted_at IS NULL LIMIT 1',
+                'SELECT id FROM cpt_entries WHERE post_type_id = ? LIMIT 1',
                 [(int) $type['id']]
             );
             self::ensureCampuses();

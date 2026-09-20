@@ -1,3 +1,16 @@
+<?php
+/**
+ * Contact details come from _start.php, but site/*.php templates render through
+ * get_header() instead and never define them — which left Call / Email / Head
+ * office / Hours blank (and logged "Undefined variable $phone1") on those
+ * pages. Resolve them here so the section works under either header.
+ */
+$s = $s ?? ($settings ?? (class_exists('Settings') ? Settings::all() : []));
+$phone1 = $phone1 ?? ($s['phone_primary'] ?? '+91 89298 28498');
+$phone1tel = $phone1tel ?? preg_replace('/\D+/', '', (string) $phone1);
+$phone2 = $phone2 ?? ($s['phone_secondary'] ?? '+91 92569 25643');
+$phone2tel = $phone2tel ?? preg_replace('/\D+/', '', (string) $phone2);
+?>
 <section class="section" id="enquire">
   <div class="container enquire-grid">
     <div>

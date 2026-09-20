@@ -1639,3 +1639,61 @@ a.program-split__item { color: inherit; }
   .reels-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
   .reel-card__frame { border-radius: 14px; }
 }
+
+/* ── Post body + latest-posts sidebar (70 / 30) ─────────────────────────── */
+.post-body__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+}
+.post-body__main { min-width: 0; }
+.post-body__side { min-width: 0; position: sticky; top: 92px; }
+.post-side {
+  border: 1px solid var(--line, rgba(16, 48, 88, 0.12));
+  border-radius: 16px;
+  padding: 1.25rem;
+  background: var(--card, #fff);
+}
+.post-side__title {
+  font-size: 1.05rem;
+  margin: 0 0 0.9rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--line, rgba(16, 48, 88, 0.12));
+}
+.post-side__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.post-side__link {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+.post-side__link:hover .post-side__name { text-decoration: underline; }
+.post-side__thumb {
+  display: block;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  background: rgba(16, 48, 88, 0.06);
+}
+.post-side__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.post-side__copy { display: grid; gap: 0.2rem; min-width: 0; }
+.post-side__name { font-weight: 600; font-size: 0.92rem; line-height: 1.35; }
+.post-side__date { font-size: 0.78rem; opacity: 0.7; }
+
+/* One column on tablet and below — a 30% rail is too cramped to read.
+   The gutter is set here rather than relying on .container, which an inline
+   rule overrides to width:100% on this template. */
+@media (max-width: 900px) {
+  .post-body__grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: clamp(1rem, 4vw, 2rem);
+  }
+  .post-body__side { position: static; }
+  .post-side__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .post-side__list { grid-template-columns: minmax(0, 1fr); }
+}

@@ -182,6 +182,12 @@ final class SectionRegistry
             'rich_text' => ['label' => 'Rich text', 'fields' => [
                 ['k' => 'html', 'l' => 'HTML', 't' => 'html'],
             ]],
+            'post_body' => ['label' => 'Post body + latest posts (70 / 30)', 'fields' => [
+                ['k' => 'html', 'l' => 'Post content', 't' => 'html'],
+                ['k' => 'sidebar_title', 'l' => 'Sidebar heading', 't' => 'text'],
+                ['k' => 'source', 'l' => 'Sidebar list — post type slug (blank = this post’s own type)', 't' => 'text'],
+                ['k' => 'limit', 'l' => 'How many posts to list (default 5, max 20)', 't' => 'text'],
+            ]],
             'split' => ['label' => 'Text + image', 'fields' => [
                 ['k' => 'kicker', 'l' => 'Eyebrow', 't' => 'text'],
                 ['k' => 'heading', 'l' => 'Heading', 't' => 'text'],
@@ -253,6 +259,7 @@ final class SectionRegistry
             'video', 'youtube_reels' => '▶',
             'blog' => 'B',
             'about', 'split', 'rich_text' => 'T',
+            'post_body' => '▤',
             'programs', 'features', 'careers' => '⊞',
             'campuses' => '⌖',
             default => strtoupper(substr($type, 0, 1)),

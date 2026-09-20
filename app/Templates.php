@@ -3,6 +3,17 @@ declare(strict_types=1);
 
 final class Templates
 {
+    /**
+     * Bump when a new starter template ships.
+     *
+     * Seeding only ever inserts what is missing, so raising this adds the new
+     * starters to an install that was already seeded without touching (or
+     * resurrecting) anything the client has edited or deleted since.
+     *   1 — original seven starters
+     *   2 — adds "AI Post Template"
+     */
+    private const SEED_VERSION = 2;
+
     public static function apply(string $ownerType, int $ownerId, int $templateId): int
     {
         $tpl = Database::one('SELECT * FROM page_templates WHERE id = ?', [$templateId]);
@@ -216,9 +227,11 @@ final class Templates
                 Database::pdo()->exec(
                     'ALTER TABLE page_templates ADD COLUMN is_starter TINYINT(1) NOT NULL DEFAULT 0 AFTER thumbnail'
                 );
+                $slugs = self::starterSlugs();
                 Database::query(
-                    'UPDATE page_templates SET is_starter = 1 WHERE slug IN (?,?,?,?,?,?,?)',
-                    self::starterSlugs()
+                    'UPDATE page_templates SET is_starter = 1 WHERE slug IN ('
+                        . implode(',', array_fill(0, count($slugs), '?')) . ')',
+                    $slugs
                 );
             }
         } catch (Throwable $e) {
@@ -229,7 +242,7 @@ final class Templates
     /** Slugs shipped by the installer. */
     public static function starterSlugs(): array
     {
-        return ['homepage', 'inner-standard', 'ai-landing', 'landing-page', 'contact-page', 'blog-post', 'gallery-page'];
+        return ['homepage', 'inner-standard', 'ai-landing', 'ai-post', 'landing-page', 'contact-page', 'blog-post', 'gallery-page'];
     }
 
     /**
@@ -248,10 +261,10 @@ final class Templates
         $done = true;
         self::ensureSchema();
         try {
-            if (Settings::get('templates_seeded') !== '1') {
+            if ((int) Settings::get('templates_seeded', '0') < self::SEED_VERSION) {
                 self::seedStarters();
                 self::grantTemplatePerms();
-                Settings::set('templates_seeded', '1');
+                Settings::set('templates_seeded', (string) self::SEED_VERSION);
             }
             Cpt::ensureAiType();
         } catch (Throwable $e) {
@@ -404,6 +417,49 @@ final class Templates
                         'heading' => 'Study at a campus near you',
                         'note' => 'Residential and day-scholar options available across Hyderabad.',
                         'bg' => $A . 'banner/campus-life-bg.jpg',
+                    ]],
+                    ['type' => 'enquire', 'content' => [
+                        'kicker' => 'Admissions open',
+                        'heading' => 'Enquire about this programme',
+                        'lede' => 'Tell us about the student and we will help you choose the right campus and batch.',
+                    ]],
+                ],
+            ],
+            [
+                'slug' => 'ai-post',
+                'name' => 'AI Post Template',
+                'description' => 'Banner with the post title, post body beside a latest-AI-posts rail, student reel reviews mid-article, campus grid and FAQ.',
+                'page_type' => 'landing',
+                'sections' => [
+                    ['type' => 'ai_banner', 'content' => [
+                        'image' => '',
+                        'kicker' => 'VR Doctors Academy',
+                    ]],
+                    ['type' => 'post_body', 'content' => [
+                        'html' => '<p>Open with the story. This column is the article body — headings, lists and links all work here.</p><h2>Key points</h2><ul><li>Replace this with the first part of the post.</li><li>The student reel reviews sit directly below this block.</li></ul>',
+                        'sidebar_title' => 'Latest AI posts',
+                        'source' => 'ai',
+                        'limit' => '5',
+                    ]],
+                    ['type' => 'youtube_reels', 'content' => [
+                        'kicker' => 'Student voices',
+                        'heading' => 'Reel reviews from our students',
+                        'lede' => 'Short clips from students who trained with VR Doctors Academy.',
+                        'videos' => "Student Reel|https://www.youtube.com/shorts/UxDWczLjHpM\nStudent Reel|https://www.youtube.com/shorts/fvCx14jXvUo\nStudent Reel|https://www.youtube.com/shorts/6ieGDybRX4o\nStudent Reel|https://www.youtube.com/shorts/Soe0N0k5elw",
+                    ]],
+                    ['type' => 'rich_text', 'content' => [
+                        'html' => '<h2>Continue the article</h2><p>The rest of the post goes here, after the student reels. Add as many rich-text blocks as the article needs.</p>',
+                    ]],
+                    ['type' => 'campuses', 'content' => [
+                        'kicker' => 'Our campuses',
+                        'heading' => 'Study at a campus near you',
+                        'note' => 'Residential and day-scholar options available across Hyderabad.',
+                        'bg' => $A . 'banner/campus-life-bg.jpg',
+                    ]],
+                    ['type' => 'faq', 'content' => [
+                        'kicker' => 'FAQs',
+                        'heading' => 'Questions families ask',
+                        'items' => "Who is this programme for?|Replace with eligibility.\nIs hostel available?|Yes — residential and day-scholar options.",
                     ]],
                     ['type' => 'enquire', 'content' => [
                         'kicker' => 'Admissions open',

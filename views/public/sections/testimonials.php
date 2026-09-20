@@ -1,4 +1,9 @@
-<?php $rows = Database::all('SELECT * FROM testimonials WHERE is_visible=1 ORDER BY sort_order, id'); ?>
+<?php
+$rows = Database::all('SELECT * FROM testimonials WHERE is_visible=1 ORDER BY sort_order, id');
+// $s is only set by _start.php; templates rendered through get_header() leave it
+// undefined, which silently sent the WhatsApp link to the placeholder number.
+$s = $s ?? ($settings ?? (class_exists('Settings') ? Settings::all() : []));
+?>
 <section class="section section--tight reviews-sec" id="testimonials">
   <div class="container reviews">
     <div class="reviews__rail">
