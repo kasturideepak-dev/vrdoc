@@ -34,10 +34,18 @@ final class AdminEntries
             View::admin('errors/404', ['title' => 'Not found']);
             return;
         }
+        Templates::ensureStarters();
         $fields = Cpt::fields((int) $type['id']);
         $values = $row ? (json_decode($row['fields_json'] ?: '{}', true) ?: []) : [];
         $sections = $row ? Content::sections('cpt', (int) $row['id']) : [];
         $seo = $row ? (Database::one('SELECT * FROM seo_metadata WHERE entity_type="cpt" AND entity_id=?', [(int) $row['id']]) ?: []) : [];
+        $defaultTemplateId = Templates::defaultTemplateIdForType($typeSlug);
+        // Some layouts put the entry title/excerpt/image straight on a banner
+        // block, so the field labels say so. Read that from the real sections
+        // rather than hard-coding one post type's slug.
+        $sectionTypes = $row
+            ? array_column($sections, 'type')
+            : Templates::sectionTypes($defaultTemplateId);
         View::admin('entries/form', [
             'title' => $row ? ('Edit ' . $type['singular_name']) : ('New ' . $type['singular_name']),
             'type' => $type,
@@ -48,8 +56,10 @@ final class AdminEntries
             'seo' => $seo,
             'registry' => SectionRegistry::all(),
             'sectionTemplates' => Database::all('SELECT * FROM section_templates ORDER BY name'),
-            'pageTemplates' => Database::all('SELECT * FROM page_templates ORDER BY name'),
-            'defaultTemplateId' => Templates::defaultTemplateIdForType($typeSlug),
+            'pageTemplates' => Templates::allPages(),
+            'defaultTemplateId' => $defaultTemplateId,
+            'defaultTemplate' => $defaultTemplateId ? Templates::page($defaultTemplateId) : null,
+            'bannerMode' => in_array('ai_banner', $sectionTypes, true),
             'ownerType' => 'cpt',
             'ownerId' => $row ? (int) $row['id'] : 0,
             'publicPath' => $row ? Cpt::permalink($row, $type) : path_url($type['slug'] . '/new'),
@@ -124,7 +134,16 @@ final class AdminEntries
         }
         Cache::flush();
         if (Request::wantsJson()) {
-            View::json(['ok' => true, 'id' => $id, 'slug' => $slug, 'url' => Cpt::permalink(['slug' => $slug, 'post_type_id' => (int) $type['id']], $type)]);
+            // Send the edit URL back. Without it an AJAX save of a *new* entry
+            // leaves the create form on screen with no id, so a second click
+            // silently creates a duplicate instead of updating.
+            View::json([
+                'ok' => true,
+                'id' => $id,
+                'slug' => $slug,
+                'url' => Cpt::permalink(['slug' => $slug, 'post_type_id' => (int) $type['id']], $type),
+                'redirect' => '/admin/content/' . $typeSlug . '/' . $id . '/',
+            ]);
         }
         View::flash('success', 'Saved.');
         View::redirect('/admin/content/' . $typeSlug . '/' . $id . '/');

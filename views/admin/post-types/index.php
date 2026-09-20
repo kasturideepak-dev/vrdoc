@@ -8,9 +8,9 @@
 </div>
 <div class="table-wrap">
   <table>
-    <thead><tr><th>Name</th><th>Archive URL</th><th>Entries</th><th>Mode</th><th>Status</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Archive URL</th><th>Entries</th><th>Default template</th><th>Mode</th><th>Status</th><th></th></tr></thead>
     <tbody>
-    <?php if (!$rows): ?><tr><td colspan="6" class="empty">None yet. Start with Courses or AI Program.</td></tr><?php endif; ?>
+    <?php if (!$rows): ?><tr><td colspan="7" class="empty">None yet. Start with Courses or AI Program.</td></tr><?php endif; ?>
     <?php foreach ($rows as $r):
       $sys = Cpt::isSystem($r);
       $archived = ($r['status'] ?? '') === 'archived';
@@ -22,6 +22,18 @@
         </td>
         <td><code>/<?= Html::e($r['slug']) ?>/</code></td>
         <td><?= (int) $r['entry_count'] ?></td>
+        <td>
+          <?php $tpl = $r['_template'] ?? null; ?>
+          <?php if ($tpl): ?>
+            <a href="/admin/templates/pages/<?= (int) $tpl['id'] ?>/"><?= Html::e($tpl['name']) ?></a>
+            <small style="color:var(--muted)"><?= (int) $r['_template_sections'] ?> sections</small>
+            <?php if (empty($r['_template_mapped'])): ?>
+              <span class="badge badge-warn" title="No template chosen — this is the generic fallback">Fallback</span>
+            <?php endif; ?>
+          <?php else: ?>
+            <span class="badge badge-off">None</span>
+          <?php endif; ?>
+        </td>
         <td><?= Html::e($r['template_mode']) ?></td>
         <td>
           <?php if ($archived): ?>
@@ -37,6 +49,9 @@
             <?php if (!$archived): ?>
               <a class="btn-ghost" href="/admin/content/<?= Html::e($r['slug']) ?>/">Entries</a>
               <a class="btn-ghost" href="/admin/content/<?= Html::e($r['slug']) ?>/new/">Add</a>
+              <?php if (Auth::can('templates.create')): ?>
+                <a class="btn-ghost" href="/admin/post-types/<?= (int) $r['id'] ?>/new-template/">New template</a>
+              <?php endif; ?>
             <?php elseif (Auth::can('post_types.edit')): ?>
               <form method="post" action="/admin/post-types/restore/" style="display:inline"><?= Csrf::field() ?>
                 <input type="hidden" name="id" value="<?= (int) $r['id'] ?>">

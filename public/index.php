@@ -61,6 +61,7 @@ $r->post('/admin/pages/delete/', fn () => AdminPages::destroy(), $auth + ['perm'
 
 $r->get('/admin/post-types/', fn () => AdminPostTypes::index(), $auth + ['perm' => 'post_types.view']);
 $r->get('/admin/post-types/new/', fn () => AdminPostTypes::form(), $auth + ['perm' => 'post_types.create']);
+$r->get('/admin/post-types/(?P<id>\d+)/new-template/', fn ($id) => AdminPostTypes::newTemplate($id), $auth + ['perm' => 'templates.create']);
 $r->get('/admin/post-types/(?P<id>\d+)/confirm-delete/', fn ($id) => AdminPostTypes::confirmDelete($id), $auth + ['perm' => 'post_types.delete']);
 $r->get('/admin/post-types/(?P<id>\d+)/', fn ($id) => AdminPostTypes::form($id), $auth + ['perm' => 'post_types.edit']);
 $r->post('/admin/post-types/', fn () => AdminPostTypes::save(), $auth);

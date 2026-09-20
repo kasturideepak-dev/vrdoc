@@ -7,10 +7,19 @@ final class AdminPostTypes
     {
         Auth::requirePerm('post_types.view');
         Cpt::ensureSchema();
+        Templates::ensureStarters();
         $rows = Database::all(
             'SELECT t.*, (SELECT COUNT(*) FROM cpt_entries e WHERE e.post_type_id = t.id AND e.deleted_at IS NULL) AS entry_count
              FROM post_types t ORDER BY t.sort_order, t.name'
         );
+        foreach ($rows as &$r) {
+            $tplId = Templates::defaultTemplateIdForType((string) $r['slug']);
+            $tpl = $tplId ? Templates::page($tplId) : null;
+            $r['_template'] = $tpl;
+            $r['_template_mapped'] = (int) ($r['default_template_id'] ?? 0) > 0;
+            $r['_template_sections'] = $tpl ? Templates::sectionCount($tpl['sections_json'] ?? '[]') : 0;
+        }
+        unset($r);
         View::admin('post-types/index', ['title' => 'Post types', 'rows' => $rows]);
     }
 
@@ -19,12 +28,17 @@ final class AdminPostTypes
         Cpt::ensureSchema();
         $row = $id ? Database::one('SELECT * FROM post_types WHERE id = ?', [(int) $id]) : null;
         Auth::requirePerm($row ? 'post_types.edit' : 'post_types.create');
+        Templates::ensureStarters();
         $fields = $row ? Cpt::fields((int) $row['id']) : [];
+        $effectiveId = $row ? Templates::defaultTemplateIdForType((string) $row['slug']) : Templates::landingId();
         View::admin('post-types/form', [
             'title' => $row ? ('Edit post type: ' . $row['name']) : 'Add new post type',
             'row' => $row,
             'fields' => $fields,
             'fieldTypes' => Fields::types(),
+            'templates' => Templates::allPages(),
+            'effectiveTemplateId' => $effectiveId,
+            'effectiveTemplate' => $effectiveId ? Templates::page($effectiveId) : null,
         ]);
     }
 
@@ -61,6 +75,7 @@ final class AdminPostTypes
             'supports_excerpt' => Request::bool('supports_excerpt') ? 1 : 0,
             'supports_editor' => Request::bool('supports_editor') ? 1 : 0,
             'sort_order' => Request::int('sort_order'),
+            'default_template_id' => self::templateIdFromRequest(),
         ];
         if ($old) {
             $posted = Request::str('status');
@@ -98,6 +113,43 @@ final class AdminPostTypes
         }
         View::flash('success', 'Post type saved. Staff can add entries from Content → ' . $name . '.');
         View::redirect('/admin/post-types/' . $id . '/');
+    }
+
+    /** The picked default template, or null for "no template / blank entries". */
+    private static function templateIdFromRequest(): ?int
+    {
+        $id = Request::int('default_template_id');
+        if ($id <= 0) {
+            return null;
+        }
+        return Templates::page($id) ? $id : null;
+    }
+
+    /**
+     * Start a fresh page template for this post type and open the builder.
+     *
+     * This is the "give me a blog template with the sections I want" path:
+     * the template is created empty, mapped to the type, and the client fills
+     * it section by section.
+     */
+    public static function newTemplate(string $id): void
+    {
+        Auth::requirePerm('templates.create');
+        Cpt::ensureSchema();
+        $type = Database::one('SELECT * FROM post_types WHERE id = ?', [(int) $id]);
+        if (!$type) {
+            self::fail('Post type not found.');
+        }
+        $tplId = Templates::createBlank(
+            $type['singular_name'] . ' Template',
+            (int) $type['has_archive'] ? 'landing' : 'standard',
+            (int) $type['id']
+        );
+        Audit::log('page_template.created', 'page_template', $tplId, [
+            'for_post_type' => $type['slug'],
+        ]);
+        View::flash('success', 'Blank template created and set as the default for ' . $type['name'] . '. Add your sections below.');
+        View::redirect('/admin/templates/pages/' . $tplId . '/');
     }
 
     private static function saveFieldDefs(int $typeId): void

@@ -387,6 +387,7 @@ final class Cpt
             return;
         }
         $done = true;
+        Templates::ensureSchema();
         try {
             $col = Database::all("SHOW COLUMNS FROM post_types LIKE 'is_system'");
             if (!$col) {

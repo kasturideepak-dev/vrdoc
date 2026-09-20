@@ -7,28 +7,35 @@ final class AdminTemplates
     {
         Auth::requirePerm('templates.view');
         Templates::ensureStarters();
-        $pages = Database::all('SELECT * FROM page_templates ORDER BY name');
+        $pages = Templates::allPages();
         foreach ($pages as &$p) {
             $p['section_count'] = Templates::sectionCount($p['sections_json'] ?? '[]');
+            $p['usage'] = Templates::usage((int) $p['id']);
         }
+        unset($p);
         View::admin('templates/index', [
             'title' => 'Templates',
             'pages' => $pages,
             'sections' => Database::all('SELECT * FROM section_templates ORDER BY name'),
+            'postTypes' => Cpt::activeTypes(),
         ]);
     }
 
     public static function pageNew(): void
     {
         Auth::requirePerm('templates.create');
-        $id = Database::insert('page_templates', [
-            'slug' => Slug::uniqueInTable('page_templates', 'new-template'),
-            'name' => 'Untitled page template',
-            'description' => '',
-            'page_type' => 'standard',
-            'sections_json' => '[]',
-        ]);
-        Audit::log('page_template.created', 'page_template', $id);
+        Templates::ensureStarters();
+        $forType = Request::int('for_type');
+        $type = $forType ? Cpt::typeById($forType) : null;
+        $id = Templates::createBlank(
+            $type ? $type['singular_name'] . ' Template' : 'Untitled page template',
+            $type && (int) $type['has_archive'] ? 'landing' : 'standard',
+            $type ? (int) $type['id'] : null
+        );
+        Audit::log('page_template.created', 'page_template', $id, $type ? ['for_post_type' => $type['slug']] : []);
+        if ($type) {
+            View::flash('success', 'Blank template created and set as the default for ' . $type['name'] . '. Add your sections below.');
+        }
         View::redirect('/admin/templates/pages/' . $id . '/');
     }
 
@@ -45,6 +52,8 @@ final class AdminTemplates
             'row' => $row,
             'sections' => json_decode($row['sections_json'] ?: '[]', true) ?: [],
             'registry' => SectionRegistry::all(),
+            'usage' => Templates::usage((int) $row['id']),
+            'sectionTemplates' => Database::all('SELECT * FROM section_templates ORDER BY name'),
         ]);
     }
 
@@ -64,6 +73,14 @@ final class AdminTemplates
             if (isset(SectionRegistry::all()[$type])) {
                 $sections[] = ['type' => $type, 'content' => SectionRegistry::defaults($type)];
             }
+        } elseif ($action === 'add_block') {
+            $st = Database::one('SELECT * FROM section_templates WHERE id = ?', [Request::int('section_template_id')]);
+            if ($st && isset(SectionRegistry::all()[$st['type']])) {
+                $sections[] = [
+                    'type' => $st['type'],
+                    'content' => json_decode($st['content_json'] ?: '{}', true) ?: SectionRegistry::defaults($st['type']),
+                ];
+            }
         } elseif ($action === 'delete_section') {
             $rm = Request::int('action_idx');
             if (isset($sections[$rm])) {
@@ -73,6 +90,12 @@ final class AdminTemplates
             $dup = Request::int('action_idx');
             if (isset($sections[$dup])) {
                 array_splice($sections, $dup + 1, 0, [$sections[$dup]]);
+            }
+        } elseif ($action === 'move_up' || $action === 'move_down') {
+            $from = Request::int('action_idx');
+            $to = $action === 'move_up' ? $from - 1 : $from + 1;
+            if (isset($sections[$from], $sections[$to])) {
+                [$sections[$from], $sections[$to]] = [$sections[$to], $sections[$from]];
             }
         }
 
@@ -89,11 +112,13 @@ final class AdminTemplates
             View::flash('success', 'Page template saved.');
             View::redirect('/admin/templates/');
         }
-        if ($action === 'add_section') {
-            View::flash('success', 'Section added.');
-        } else {
-            View::flash('success', 'Page template saved.');
-        }
+        View::flash('success', match ($action) {
+            'add_section', 'add_block' => 'Section added.',
+            'delete_section' => 'Section removed.',
+            'duplicate_section' => 'Section duplicated.',
+            'move_up', 'move_down' => 'Section order updated.',
+            default => 'Page template saved.',
+        });
         View::redirect('/admin/templates/pages/' . (int) $id . '/');
     }
 
@@ -119,7 +144,20 @@ final class AdminTemplates
     public static function pageDelete(): void
     {
         Auth::requirePerm('templates.delete');
-        Database::delete('page_templates', 'id = ?', [Request::int('id')]);
+        $id = Request::int('id');
+        $row = Templates::page($id);
+        if (!$row) {
+            View::flash('error', 'Template not found.');
+            View::redirect('/admin/templates/');
+        }
+        $usage = Templates::usage($id);
+        if ($usage['post_types']) {
+            $names = implode(', ', array_column($usage['post_types'], 'name'));
+            View::flash('error', '“' . $row['name'] . '” is the default template for ' . $names . '. Point those post types at another template first.');
+            View::redirect('/admin/templates/');
+        }
+        Database::delete('page_templates', 'id = ?', [$id]);
+        Audit::log('page_template.deleted', 'page_template', $id, ['name' => $row['name']]);
         View::flash('success', 'Page template deleted.');
         View::redirect('/admin/templates/');
     }

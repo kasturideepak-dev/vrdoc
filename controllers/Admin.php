@@ -21,7 +21,6 @@ final class Admin
         $activity = Database::all('SELECT a.*, u.name AS user_name FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT 8');
         $lastBackup = Database::one('SELECT * FROM backups ORDER BY id DESC LIMIT 1');
         $nf = Database::all('SELECT * FROM not_found_log ORDER BY last_hit_at DESC LIMIT 6');
-        $courses = Cpt::type('courses');
         $home = Database::one('SELECT id FROM pages WHERE slug = "/" AND deleted_at IS NULL');
         View::admin('dashboard', [
             'title' => 'Overview',
@@ -30,9 +29,46 @@ final class Admin
             'activity' => $activity,
             'lastBackup' => $lastBackup,
             'notFound' => $nf,
-            'coursesType' => $courses,
+            'contentMap' => self::contentMap(),
             'homeId' => $home['id'] ?? null,
         ]);
+    }
+
+    /**
+     * Post type → archive URL → default template → entry counts.
+     *
+     * The dashboard's job is to show at a glance what content exists and which
+     * layout each type starts from, so a missing mapping is visible rather than
+     * something staff discover when a new entry comes out blank.
+     */
+    private static function contentMap(): array
+    {
+        try {
+            Cpt::ensureSchema();
+        } catch (Throwable $e) {
+            error_log('Admin::contentMap: ' . $e->getMessage());
+            return [];
+        }
+        $types = Database::all(
+            'SELECT t.*,
+                    (SELECT COUNT(*) FROM cpt_entries e
+                      WHERE e.post_type_id = t.id AND e.deleted_at IS NULL) AS entry_count,
+                    (SELECT COUNT(*) FROM cpt_entries e
+                      WHERE e.post_type_id = t.id AND e.deleted_at IS NULL AND e.status = "published") AS published_count
+             FROM post_types t WHERE t.status = "active" ORDER BY t.sort_order, t.name'
+        );
+        $out = [];
+        foreach ($types as $t) {
+            $tplId = Templates::defaultTemplateIdForType((string) $t['slug']);
+            $tpl = $tplId ? Templates::page($tplId) : null;
+            $out[] = [
+                'type' => $t,
+                'template' => $tpl,
+                'mapped' => (int) ($t['default_template_id'] ?? 0) > 0,
+                'sections' => $tpl ? Templates::sectionCount($tpl['sections_json'] ?? '[]') : 0,
+            ];
+        }
+        return $out;
     }
 
     public static function search(): void

@@ -2,6 +2,9 @@
 $row = $row ?? null;
 $values = $values ?? [];
 $mode = $type['template_mode'] ?? 'both';
+// Layouts built around a banner block take the title, excerpt and featured
+// image straight from this form, so the labels say where each one shows up.
+$banner = !empty($bannerMode);
 ?>
 <div class="page-head">
   <div>
@@ -28,7 +31,15 @@ $mode = $type['template_mode'] ?? 'both';
     $defaultTpl = (int) ($defaultTemplateId ?? 0);
   ?>
     <h3>Start from a template?</h3>
-    <p style="color:var(--muted);margin:0 0 12px"><?= ($type['slug'] ?? '') === 'ai' ? 'AI Program Landing is selected by default for new AI programmes.' : 'Landing Page Template is selected by default for new courses and programmes.' ?></p>
+    <p style="color:var(--muted);margin:0 0 12px">
+      <?php if (!empty($defaultTemplate)): ?>
+        <strong><?= Html::e($defaultTemplate['name']) ?></strong> is the default for <?= Html::e($type['name']) ?>.
+        Pick another layout below if this one needs different sections.
+      <?php else: ?>
+        No default template is set for <?= Html::e($type['name']) ?>. Pick a layout below, or
+        <a href="/admin/post-types/<?= (int) $type['id'] ?>/">set a default</a> so every new entry starts the same way.
+      <?php endif; ?>
+    </p>
     <div class="tpl-grid">
       <label class="tpl-pick">
         <input type="radio" name="template_id" value="" <?= $defaultTpl ? '' : 'checked' ?>>
@@ -40,18 +51,18 @@ $mode = $type['template_mode'] ?? 'both';
       ?>
         <label class="tpl-pick">
           <input type="radio" name="template_id" value="<?= (int) $t['id'] ?>" <?= $defaultTpl === (int) $t['id'] ? 'checked' : '' ?>>
-          <strong><?= Html::e($t['name']) ?></strong>
+          <strong><?= Html::e($t['name']) ?><?= $defaultTpl === (int) $t['id'] ? ' — default' : '' ?></strong>
           <span><?= Html::e($t['description'] ?: $t['page_type']) ?></span>
           <small><?= $n ?> section<?= $n === 1 ? '' : 's' ?></small>
         </label>
       <?php endforeach; ?>
     </div>
   <?php endif; ?>
-  <?php if (($type['slug'] ?? '') === 'ai'): ?>
+  <?php if ($banner): ?>
     <p style="color:var(--muted);margin:0 0 12px"><strong>Title</strong> and <strong>Description</strong> appear on the banner. <strong>Featured image</strong> is used as the banner photo unless overridden in the Banner section.</p>
   <?php endif; ?>
   <div class="row2">
-    <label class="lab"><?= ($type['slug'] ?? '') === 'ai' ? 'Title (banner heading)' : 'Title' ?> <input name="title" required value="<?= Html::e($row['title'] ?? '') ?>" data-slug-source="[name=slug]"></label>
+    <label class="lab"><?= $banner ? 'Title (banner heading)' : 'Title' ?> <input name="title" required value="<?= Html::e($row['title'] ?? '') ?>" data-slug-source="[name=slug]"></label>
     <label class="lab">Slug <input name="slug" value="<?= Html::e($row['slug'] ?? '') ?>" data-slug-check="entry" data-id="<?= (int) ($row['id'] ?? 0) ?>" data-type-id="<?= (int) $type['id'] ?>"></label>
   </div>
   <div class="row3">
@@ -66,10 +77,10 @@ $mode = $type['template_mode'] ?? 'both';
     <label class="lab">Sort <input type="number" name="sort_order" value="<?= Html::e((string) ($row['sort_order'] ?? '0')) ?>"></label>
   </div>
   <?php if ((int) $type['supports_excerpt']): ?>
-    <label class="lab"><?= ($type['slug'] ?? '') === 'ai' ? 'Description (banner subtitle)' : 'Excerpt' ?> <textarea name="excerpt" rows="3"><?= Html::e($row['excerpt'] ?? '') ?></textarea></label>
+    <label class="lab"><?= $banner ? 'Description (banner subtitle)' : 'Excerpt' ?> <textarea name="excerpt" rows="3"><?= Html::e($row['excerpt'] ?? '') ?></textarea></label>
   <?php endif; ?>
   <?php if ((int) $type['supports_featured_image']): ?>
-    <label class="lab"><?= ($type['slug'] ?? '') === 'ai' ? 'Banner image' : 'Featured image' ?>
+    <label class="lab"><?= $banner ? 'Banner image' : 'Featured image' ?>
       <input name="featured_image" value="<?= Html::e($row['featured_image'] ?? '') ?>">
       <button class="btn-ghost" type="button" data-media-open="[name=featured_image]">Pick</button>
     </label>

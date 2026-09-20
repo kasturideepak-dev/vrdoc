@@ -45,12 +45,119 @@ final class Templates
         return $row ? (int) $row['id'] : null;
     }
 
+    /**
+     * The template a new entry of this post type starts from.
+     *
+     * Reads the mapping the admin picked on the post type. Falls back to the
+     * historic slug-based guess only while a type has no mapping of its own.
+     */
     public static function defaultTemplateIdForType(string $typeSlug): ?int
     {
+        $type = Database::one('SELECT * FROM post_types WHERE slug = ?', [$typeSlug]);
+        $mapped = (int) ($type['default_template_id'] ?? 0);
+        if ($mapped > 0 && Database::one('SELECT id FROM page_templates WHERE id = ?', [$mapped])) {
+            return $mapped;
+        }
         if ($typeSlug === 'ai') {
             return self::aiLandingId() ?? self::landingId();
         }
         return self::landingId();
+    }
+
+    /** All page templates, newest mapping first, for pickers. */
+    public static function allPages(): array
+    {
+        return Database::all('SELECT * FROM page_templates ORDER BY name');
+    }
+
+    public static function page(int $id): ?array
+    {
+        return Database::one('SELECT * FROM page_templates WHERE id = ?', [$id]);
+    }
+
+    /** Section types a template lays down, in order. */
+    public static function sectionTypes(?int $templateId): array
+    {
+        if (!$templateId) {
+            return [];
+        }
+        $tpl = self::page($templateId);
+        return $tpl ? self::sectionTypesFromJson($tpl['sections_json'] ?? '[]') : [];
+    }
+
+    /** Same, for callers that already hold the sections JSON. */
+    public static function sectionTypesFromJson(?string $json): array
+    {
+        $out = [];
+        foreach (json_decode($json ?: '[]', true) ?: [] as $s) {
+            if (!empty($s['type'])) {
+                $out[] = (string) $s['type'];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Everything that points at a page template.
+     *
+     * @return array{post_types:list<array<string,mixed>>,pages:int}
+     */
+    public static function usage(int $templateId): array
+    {
+        $types = [];
+        try {
+            $types = Database::all(
+                'SELECT id, name, slug, status FROM post_types WHERE default_template_id = ? ORDER BY sort_order, name',
+                [$templateId]
+            );
+        } catch (Throwable $e) {
+            error_log('Templates::usage: ' . $e->getMessage());
+        }
+        return [
+            'post_types' => $types,
+            'pages' => (int) (Database::one(
+                'SELECT COUNT(*) c FROM pages WHERE template_id = ? AND deleted_at IS NULL',
+                [$templateId]
+            )['c'] ?? 0),
+        ];
+    }
+
+    /** Post type id => default template row, for dashboard and list mapping. */
+    public static function mapByPostType(): array
+    {
+        try {
+            $rows = Database::all(
+                'SELECT t.id AS type_id, p.* FROM post_types t
+                 JOIN page_templates p ON p.id = t.default_template_id'
+            );
+        } catch (Throwable $e) {
+            error_log('Templates::mapByPostType: ' . $e->getMessage());
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $typeId = (int) $r['type_id'];
+            unset($r['type_id']);
+            $out[$typeId] = $r;
+        }
+        return $out;
+    }
+
+    /** Start a blank template, optionally wired up as a post type's default. */
+    public static function createBlank(string $name, string $pageType = 'standard', ?int $forTypeId = null): int
+    {
+        $id = Database::insert('page_templates', [
+            'slug' => Slug::uniqueInTable('page_templates', $name !== '' ? $name : 'new-template'),
+            'name' => $name !== '' ? $name : 'Untitled page template',
+            'description' => '',
+            'page_type' => $pageType,
+            'sections_json' => '[]',
+        ]);
+        if ($forTypeId) {
+            Database::update('post_types', ['default_template_id' => $id], 'id = ?', [$forTypeId]);
+            Cache::flush();
+        }
+        return $id;
     }
 
     public static function packFromPost(array $existing = []): array
@@ -89,8 +196,96 @@ final class Templates
         ]);
     }
 
-    /** Upsert the starter page + section templates into the live database. */
+    /**
+     * Add missing columns on installs that pre-date the template mapping.
+     */
+    public static function ensureSchema(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        try {
+            if (!Database::all("SHOW COLUMNS FROM post_types LIKE 'default_template_id'")) {
+                Database::pdo()->exec(
+                    'ALTER TABLE post_types ADD COLUMN default_template_id SMALLINT UNSIGNED NULL AFTER template_mode'
+                );
+            }
+            if (!Database::all("SHOW COLUMNS FROM page_templates LIKE 'is_starter'")) {
+                Database::pdo()->exec(
+                    'ALTER TABLE page_templates ADD COLUMN is_starter TINYINT(1) NOT NULL DEFAULT 0 AFTER thumbnail'
+                );
+                Database::query(
+                    'UPDATE page_templates SET is_starter = 1 WHERE slug IN (?,?,?,?,?,?,?)',
+                    self::starterSlugs()
+                );
+            }
+        } catch (Throwable $e) {
+            error_log('Templates::ensureSchema: ' . $e->getMessage());
+        }
+    }
+
+    /** Slugs shipped by the installer. */
+    public static function starterSlugs(): array
+    {
+        return ['homepage', 'inner-standard', 'ai-landing', 'landing-page', 'contact-page', 'blog-post', 'gallery-page'];
+    }
+
+    /**
+     * Put the shipped starter templates in place, once per install.
+     *
+     * Seeding is deliberately one-shot. This is reached from Templates, Pages →
+     * New and the entry forms, so re-running it would either revert templates
+     * the client has edited or resurrect ones they deleted on purpose.
+     */
     public static function ensureStarters(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        self::ensureSchema();
+        try {
+            if (Settings::get('templates_seeded') !== '1') {
+                self::seedStarters();
+                self::grantTemplatePerms();
+                Settings::set('templates_seeded', '1');
+            }
+            Cpt::ensureAiType();
+        } catch (Throwable $e) {
+            error_log('Templates::ensureStarters: ' . $e->getMessage());
+        }
+    }
+
+    /** Grant the editor role the template permissions the starters assume. */
+    private static function grantTemplatePerms(): void
+    {
+        $editor = Database::one('SELECT id FROM roles WHERE slug = ?', ['editor']);
+        if (!$editor) {
+            return;
+        }
+        foreach (['templates.view', 'templates.create', 'templates.edit'] as $slug) {
+            $perm = Database::one('SELECT id FROM permissions WHERE slug = ?', [$slug]);
+            if (!$perm) {
+                continue;
+            }
+            $has = Database::one(
+                'SELECT role_id FROM role_permissions WHERE role_id = ? AND permission_id = ?',
+                [(int) $editor['id'], (int) $perm['id']]
+            );
+            if (!$has) {
+                Database::insert('role_permissions', [
+                    'role_id' => (int) $editor['id'],
+                    'permission_id' => (int) $perm['id'],
+                ]);
+            }
+        }
+    }
+
+    /** Insert the shipped starter templates. Never touches existing rows. */
+    private static function seedStarters(): void
     {
         $A = '/assets/img/';
         $apply = '/contact-us/#enquire';
@@ -325,19 +520,17 @@ final class Templates
         ];
 
         foreach ($pages as $p) {
-            $data = [
+            if (Database::one('SELECT id FROM page_templates WHERE slug = ?', [$p['slug']])) {
+                continue;
+            }
+            Database::insert('page_templates', [
+                'slug' => $p['slug'],
                 'name' => $p['name'],
                 'description' => $p['description'],
                 'page_type' => $p['page_type'],
                 'sections_json' => Html::json($p['sections']),
-            ];
-            $exists = Database::one('SELECT id FROM page_templates WHERE slug = ?', [$p['slug']]);
-            if ($exists) {
-                Database::update('page_templates', $data, 'id = ?', [(int) $exists['id']]);
-            } else {
-                $data['slug'] = $p['slug'];
-                Database::insert('page_templates', $data);
-            }
+                'is_starter' => 1,
+            ]);
         }
 
         $sections = [
@@ -377,43 +570,16 @@ final class Templates
             ]],
         ];
 
-        $editor = Database::one('SELECT id FROM roles WHERE slug = ?', ['editor']);
-        if ($editor) {
-            foreach (['templates.view', 'templates.create', 'templates.edit'] as $slug) {
-                $perm = Database::one('SELECT id FROM permissions WHERE slug = ?', [$slug]);
-                if (!$perm) {
-                    continue;
-                }
-                $has = Database::one(
-                    'SELECT role_id FROM role_permissions WHERE role_id = ? AND permission_id = ?',
-                    [(int) $editor['id'], (int) $perm['id']]
-                );
-                if (!$has) {
-                    Database::insert('role_permissions', [
-                        'role_id' => (int) $editor['id'],
-                        'permission_id' => (int) $perm['id'],
-                    ]);
-                }
-            }
-        }
-
         foreach ($sections as $s) {
-            $exists = Database::one('SELECT id FROM section_templates WHERE name = ? AND type = ?', [$s[0], $s[1]]);
-            $payload = [
+            if (Database::one('SELECT id FROM section_templates WHERE name = ? AND type = ?', [$s[0], $s[1]])) {
+                continue;
+            }
+            Database::insert('section_templates', [
                 'name' => $s[0],
                 'type' => $s[1],
                 'content_json' => Html::json($s[2]),
                 'created_by' => Auth::id(),
-            ];
-            if ($exists) {
-                Database::update('section_templates', [
-                    'content_json' => $payload['content_json'],
-                ], 'id = ?', [(int) $exists['id']]);
-            } else {
-                Database::insert('section_templates', $payload);
-            }
+            ]);
         }
-
-        Cpt::ensureAiType();
     }
 }

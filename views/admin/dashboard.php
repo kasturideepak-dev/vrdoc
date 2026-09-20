@@ -6,12 +6,10 @@
   </div>
 </div>
 <div class="quick">
-  <a href="/admin/post-types/new/"><strong>Add new post type</strong><span>Launch AI Program, Events, Notices…</span></a>
-  <?php if (!empty($coursesType)): ?>
-    <a href="/admin/content/courses/new/"><strong>Add new course</strong><span>Goes live at /courses/{slug}/</span></a>
-  <?php endif; ?>
-  <a href="/admin/leads/"><strong>View leads</strong><span><?= (int) $stats['leads_new'] ?> new enquiries</span></a>
-  <a href="<?= !empty($homeId) ? '/admin/pages/' . (int) $homeId . '/' : '/admin/pages/' ?>"><strong>Edit homepage</strong><span>Approved Phase 1 layout</span></a>
+  <a href="/admin/post-types/new/"><strong>Add new post type</strong><span>Blog, Events, Notices — fields and URLs included</span></a>
+  <a href="/admin/templates/"><strong>Build a template</strong><span>Pick the sections each type starts with</span></a>
+  <a href="/admin/leads/"><strong>View leads</strong><span><?= (int) $stats['leads_new'] ?> new <?= (int) $stats['leads_new'] === 1 ? 'enquiry' : 'enquiries' ?></span></a>
+  <a href="<?= !empty($homeId) ? '/admin/pages/' . (int) $homeId . '/' : '/admin/pages/' ?>"><strong>Edit homepage</strong><span>Sections, copy and images</span></a>
 </div>
 <div class="cards">
   <div class="card"><span class="k">Pages</span><strong><?= (int) $stats['pages'] ?></strong><div class="hint"><?= (int) $stats['published'] ?> published</div></div>
@@ -19,7 +17,60 @@
   <div class="card"><span class="k">Leads this month</span><strong><?= (int) $stats['leads_month'] ?></strong><div class="hint"><?= (int) $stats['leads_new'] ?> still new</div></div>
   <div class="card"><span class="k">Blog posts</span><strong><?= (int) $stats['posts'] ?></strong><div class="hint"><?= (int) $stats['media'] ?> media files</div></div>
 </div>
-<div class="row2">
+<div class="page-head" style="margin-top:22px">
+  <div>
+    <h2>Content types</h2>
+    <p>What each type publishes, and the template its new entries start from.</p>
+  </div>
+  <a class="btn-ghost" href="/admin/post-types/">Manage post types</a>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Archive URL</th><th>Entries</th><th>Default template</th><th>Sections</th><th></th></tr>
+    </thead>
+    <tbody>
+      <?php if (empty($contentMap)): ?>
+        <tr><td colspan="6" class="empty">No post types yet. <a href="/admin/post-types/new/">Create one</a> to get started.</td></tr>
+      <?php endif; ?>
+      <?php foreach ($contentMap as $m):
+        $t = $m['type'];
+        $tpl = $m['template'];
+      ?>
+        <tr>
+          <td><a href="/admin/content/<?= Html::e($t['slug']) ?>/"><?= Html::e($t['name']) ?></a></td>
+          <td>
+            <?php if ((int) $t['public'] && (int) $t['has_archive']): ?>
+              <code>/<?= Html::e($t['slug']) ?>/</code>
+            <?php else: ?>
+              <span class="badge badge-off">Not public</span>
+            <?php endif; ?>
+          </td>
+          <td><?= (int) $t['entry_count'] ?> <small style="color:var(--muted)">(<?= (int) $t['published_count'] ?> live)</small></td>
+          <td>
+            <?php if ($tpl): ?>
+              <a href="/admin/templates/pages/<?= (int) $tpl['id'] ?>/"><?= Html::e($tpl['name']) ?></a>
+              <?php if (!$m['mapped']): ?>
+                <span class="badge badge-warn" title="No template assigned — falling back to a generic layout">Fallback</span>
+              <?php endif; ?>
+            <?php else: ?>
+              <span class="badge badge-off">None</span>
+            <?php endif; ?>
+          </td>
+          <td><?= (int) $m['sections'] ?></td>
+          <td>
+            <div class="toolbar">
+              <a class="btn-ghost" href="/admin/content/<?= Html::e($t['slug']) ?>/new/">Add</a>
+              <a class="btn-ghost" href="/admin/post-types/<?= (int) $t['id'] ?>/">Settings</a>
+            </div>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
+</div>
+
+<div class="row2" style="margin-top:22px">
   <div class="table-wrap">
     <table>
       <thead><tr><th>Recent activity</th><th>When</th></tr></thead>

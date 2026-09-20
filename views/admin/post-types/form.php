@@ -1,6 +1,8 @@
 <?php
 $row = $row ?? null;
 $fields = $fields ?? [];
+$templates = $templates ?? [];
+$mapped = (int) ($row['default_template_id'] ?? 0);
 $proto = '<div class="field-row">'
   . '<input name="field_label[]" placeholder="Label">'
   . '<input name="field_name[]" placeholder="machine_name">'
@@ -31,7 +33,7 @@ $proto .= '</select><select name="field_required[]"><option value="0">Optional</
   </label>
   <label class="lab">Description <input name="description" value="<?= Html::e($row['description'] ?? '') ?>"></label>
   <div class="row3">
-    <label class="lab">Template
+    <label class="lab">Editing mode
       <select name="template_mode">
         <?php foreach (['both' => 'Fields + page builder', 'fields' => 'Fields only', 'builder' => 'Page builder only'] as $k => $l): ?>
           <option value="<?= $k ?>"<?= Html::selected($row['template_mode'] ?? 'both', $k) ?>><?= $l ?></option>
@@ -42,6 +44,50 @@ $proto .= '</select><select name="field_required[]"><option value="0">Optional</
     <label class="lab">Sort <input type="number" name="sort_order" value="<?= Html::e((string) ($row['sort_order'] ?? '0')) ?>"></label>
   </div>
   <label class="lab">Archive intro <textarea name="archive_intro"><?= Html::e($row['archive_intro'] ?? '') ?></textarea></label>
+
+  <h3>Default template</h3>
+  <p style="color:var(--muted);margin:0 0 8px">
+    Every new <?= Html::e($row['singular_name'] ?? 'entry') ?> starts with a copy of this layout's sections.
+    Staff can still swap it, reorder blocks, or start blank on the entry itself.
+  </p>
+  <div class="row2">
+    <label class="lab">Template
+      <select name="default_template_id">
+        <option value="0"<?= Html::selected($mapped, 0) ?>>No template — start blank</option>
+        <?php foreach ($templates as $t):
+          $n = Templates::sectionCount($t['sections_json'] ?? '[]');
+        ?>
+          <option value="<?= (int) $t['id'] ?>"<?= Html::selected($mapped, (int) $t['id']) ?>>
+            <?= Html::e($t['name']) ?> — <?= $n ?> section<?= $n === 1 ? '' : 's' ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <div class="lab">
+      <span>Build a new one</span>
+      <?php if ($row): ?>
+        <a class="btn-ghost" href="/admin/post-types/<?= (int) $row['id'] ?>/new-template/">Create a blank template for this type</a>
+        <small style="color:var(--muted)">Opens the section builder with this type already mapped.</small>
+      <?php else: ?>
+        <small style="color:var(--muted)">Save the post type first, then you can build a template for it.</small>
+      <?php endif; ?>
+    </div>
+  </div>
+  <?php if ($mapped === 0 && !empty($effectiveTemplate)): ?>
+    <p class="hint">
+      No template chosen, so new entries currently fall back to
+      <strong><?= Html::e($effectiveTemplate['name']) ?></strong>
+      (<?= Templates::sectionCount($effectiveTemplate['sections_json'] ?? '[]') ?> sections).
+      Pick one above to make that explicit.
+    </p>
+  <?php elseif ($mapped > 0 && !empty($effectiveTemplate)): ?>
+    <p class="hint">
+      Sections in this template:
+      <?php $types = Templates::sectionTypesFromJson($effectiveTemplate['sections_json'] ?? '[]'); ?>
+      <?= $types ? Html::e(implode(' → ', array_map([SectionRegistry::class, 'label'], $types))) : 'none yet' ?> ·
+      <a href="/admin/templates/pages/<?= $mapped ?>/">Edit sections</a>
+    </p>
+  <?php endif; ?>
   <div class="toolbar">
     <label><input type="checkbox" name="public" <?= Html::checked(!$row || (int) $row['public']) ?>> Public (has URLs)</label>
     <label><input type="checkbox" name="has_archive" <?= Html::checked(!$row || (int) $row['has_archive']) ?>> Archive at /{slug}/</label>
