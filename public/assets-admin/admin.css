@@ -979,3 +979,29 @@ label.lab.wysiwyg-field > .ql-toolbar { margin-top: 6px; }
    long page or entry title pushed dropdowns past their column. */
 .field-grid select, .field-grid input, .field-grid textarea,
 .lab select, .lab input:not([type=checkbox]):not([type=radio]) { width: 100%; min-width: 0; max-width: 100%; }
+
+/* ——— Row actions (icon + label buttons in list tables) ——— */
+.row-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 4px; }
+/* The actions cell takes only the room its buttons need; other columns flex. */
+td:has(> .row-actions) { width: 1%; white-space: nowrap; }
+.act-form { display: contents; margin: 0; }
+.act {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 32px; padding: 0 10px;
+  border: 1px solid var(--line-2); border-radius: 8px;
+  background: var(--bg-2); color: var(--text);
+  font: inherit; font-size: var(--fs-sm); font-weight: 600; line-height: 1;
+  text-decoration: none; white-space: nowrap; cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.act:hover { background: var(--glass-2); border-color: var(--orange-2); color: var(--orange-2); text-decoration: none; }
+.act:focus-visible { outline: 2px solid var(--orange-2); outline-offset: 2px; }
+.act__ico { flex: none; }
+.act--ok:hover { border-color: var(--ok); color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.act--danger { color: var(--err); }
+.act--danger:hover { border-color: var(--err); color: var(--err); background: color-mix(in srgb, var(--err) 10%, transparent); }
+/* Narrow screens: icons only, labels stay for screen readers. */
+@media (max-width: 900px) {
+  .act { padding: 0 8px; }
+  .act span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

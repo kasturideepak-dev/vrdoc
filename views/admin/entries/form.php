@@ -434,8 +434,11 @@ $strandedBody = $hasSections && trim(strip_tags((string) ($row['body_html'] ?? '
 <?php /* Secondary actions live in their own forms — forms cannot nest. */ ?>
 <?php if ($row): ?>
   <form id="preview-form" method="post" action="<?= $base ?>/<?= $eid ?>/preview/" data-ajax="off" hidden><?= Csrf::field() ?></form>
-  <form id="trash-form" method="post" action="<?= $base ?>/trash/" data-confirm="Move this entry to trash?" data-ajax="off" hidden>
+  <?php $entryInMenu = (bool) Menu::linksTo('cpt_entry', 'cpt', (int) $eid); ?>
+  <form id="trash-form" method="post" action="<?= $base ?>/trash/" data-confirm="Move this entry to trash?<?= $entryInMenu ? ' A menu links to it — that link will disappear from the site.' : '' ?>" data-ajax="off" hidden>
     <?= Csrf::field() ?><input type="hidden" name="id" value="<?= $eid ?>">
+    <?php // Without this the server bounced a menu-linked entry back here forever. ?>
+    <?php if ($entryInMenu): ?><input type="hidden" name="confirm_links" value="1"><?php endif; ?>
   </form>
 <?php endif; ?>
 <?php if ($strandedBody): ?>

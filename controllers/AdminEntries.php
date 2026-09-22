@@ -187,6 +187,7 @@ final class AdminEntries
         $ids = array_values(array_filter(array_map('intval', (array) ($_POST['ids'] ?? [])), static fn ($i) => $i > 0));
         $action = Request::str('bulk_action');
         $back = '/admin/content/' . $typeSlug . '/';
+        $fromTrash = Request::str('from') === 'trash';
         if (!$ids || $action === '') {
             View::flash('error', 'Pick at least one entry and an action.');
             View::redirect($back);
@@ -232,6 +233,17 @@ final class AdminEntries
                 )->rowCount();
                 break;
             case 'delete':
+                // Only entries already in the trash can be deleted for good.
+                $ids = array_map('intval', array_column(Database::all(
+                    'SELECT id FROM cpt_entries WHERE id IN (' . $in . ') AND post_type_id = ? AND deleted_at IS NOT NULL',
+                    $scoped
+                ), 'id'));
+                if (!$ids) {
+                    View::flash('error', 'Move entries to the trash before deleting them permanently.');
+                    View::redirect($back . ($fromTrash ? '?trash=1' : ''));
+                }
+                $in = implode(',', array_fill(0, count($ids), '?'));
+                $scoped = array_merge($ids, [(int) $type['id']]);
                 Database::query('DELETE FROM content_sections WHERE owner_type = "cpt" AND owner_id IN (' . $in . ')', $ids);
                 Database::query('DELETE FROM term_entries WHERE entry_id IN (' . $in . ')', $ids);
                 Database::query('DELETE FROM entry_relations WHERE from_entry_id IN (' . $in . ') OR to_entry_id IN (' . $in . ')', array_merge($ids, $ids));
@@ -246,8 +258,17 @@ final class AdminEntries
         }
         Audit::log('entry.bulk', 'cpt', 0, ['action' => $action, 'count' => $n, 'type' => $typeSlug]);
         Cache::flush();
-        View::flash('success', $n . ' ' . ($n === 1 ? 'entry' : 'entries') . ' ' . $action . 'd.');
-        View::redirect($back . ($action === 'trash' || $action === 'delete' ? '' : ''));
+        $done = [
+            'publish' => 'published', 'unpublish' => 'hidden (unpublished)', 'trash' => 'moved to trash',
+            'restore' => 'restored as draft', 'delete' => 'deleted permanently',
+        ][$action];
+        View::flash('success', $n . ' ' . ($n === 1 ? 'entry' : 'entries') . ' ' . $done . '.');
+        // Stay in the trash while working through it, unless it is now empty.
+        $stayInTrash = $fromTrash && Database::one(
+            'SELECT id FROM cpt_entries WHERE post_type_id = ? AND deleted_at IS NOT NULL LIMIT 1',
+            [(int) $type['id']]
+        );
+        View::redirect($back . ($stayInTrash ? '?trash=1' : ''));
     }
 
     public static function addSection(string $typeSlug, string $id): void
@@ -384,10 +405,23 @@ final class AdminEntries
     public static function destroy(string $typeSlug): void
     {
         Auth::requirePerm('entries.delete');
+        $type = Cpt::type($typeSlug);
         $id = Request::int('id');
+        $row = $type ? Database::one(
+            'SELECT id FROM cpt_entries WHERE id = ? AND post_type_id = ? AND deleted_at IS NOT NULL',
+            [$id, (int) $type['id']]
+        ) : null;
+        if (!$row) {
+            View::flash('error', 'Move the entry to the trash before deleting it permanently.');
+            View::redirect('/admin/content/' . $typeSlug . '/?trash=1');
+        }
+        Database::query('DELETE FROM content_sections WHERE owner_type = "cpt" AND owner_id = ?', [$id]);
+        Database::query('DELETE FROM term_entries WHERE entry_id = ?', [$id]);
+        Database::query('DELETE FROM entry_relations WHERE from_entry_id = ? OR to_entry_id = ?', [$id, $id]);
         Database::delete('cpt_entries', 'id = ?', [$id]);
         Cache::flush();
         Audit::log('entry.deleted', 'cpt', $id);
+        View::flash('success', 'Deleted permanently.');
         View::redirect('/admin/content/' . $typeSlug . '/?trash=1');
     }
 }

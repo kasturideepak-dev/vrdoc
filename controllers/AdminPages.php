@@ -247,18 +247,23 @@ final class AdminPages
         if (Request::wantsJson()) {
             View::json(['ok' => true, 'message' => 'Published']);
         }
-        View::redirect('/admin/pages/' . $id . '/');
+        View::redirect(Request::str('back') === 'list' ? '/admin/pages/' : '/admin/pages/' . $id . '/');
     }
 
     public static function unpublish(string $id): void
     {
         Auth::requirePerm('pages.publish');
+        $page = Database::one('SELECT slug FROM pages WHERE id = ?', [(int) $id]);
+        if ($page && $page['slug'] === '/') {
+            View::flash('error', 'The homepage cannot be hidden — the whole site would start at a 404.');
+            View::redirect(Request::str('back') === 'list' ? '/admin/pages/' : '/admin/pages/' . $id . '/');
+        }
         Database::update('pages', ['status' => 'unpublished', 'updated_by' => Auth::id()], 'id = ?', [(int) $id]);
         Database::query('UPDATE content_revisions SET is_live = 0 WHERE owner_type="page" AND owner_id = ?', [(int) $id]);
         Cache::flush();
         Audit::log('page.unpublished', 'page', (int) $id);
         View::flash('success', 'Page unpublished. Direct visits now 404.');
-        View::redirect('/admin/pages/' . $id . '/');
+        View::redirect(Request::str('back') === 'list' ? '/admin/pages/' : '/admin/pages/' . $id . '/');
     }
 
     public static function preview(string $id): void

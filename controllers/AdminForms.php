@@ -142,6 +142,11 @@ final class AdminForms
             $sql .= ' AND s.status = ?';
             $params[] = $status;
         }
+        // "Leads" on a Forms row opens just that form's submissions.
+        if (Request::int('form') > 0) {
+            $sql .= ' AND s.form_id = ?';
+            $params[] = Request::int('form');
+        }
         if ($q !== '') {
             $sql .= ' AND s.payload_json LIKE ?';
             $params[] = '%' . $q . '%';
