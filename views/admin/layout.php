@@ -13,6 +13,10 @@ $types = $postTypesNav ?? [];
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="<?= Html::e(Csrf::token()) ?>">
+  <script>
+    // Apply a saved theme before first paint so the page never flashes.
+    try { var t = localStorage.getItem('vr-admin-theme'); if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+  </script>
   <title><?= Html::e($title ?? 'Admin') ?> · VR CMS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -64,6 +68,9 @@ $types = $postTypesNav ?? [];
         <div class="admin-user">
           <span class="ava"><?= Html::e($initials) ?></span>
           <span><?= Html::e($u['name'] ?? '') ?> · <?= Html::e($u['role_name'] ?? '') ?></span>
+          <button class="btn-ghost theme-toggle" type="button" data-theme-toggle title="Switch light / dark theme" aria-label="Switch light or dark theme">
+            <span class="ti-light" aria-hidden="true">☾</span><span class="ti-dark" aria-hidden="true">☀</span>
+          </button>
           <a class="btn-ghost" href="/" target="_blank" rel="noopener">View site</a>
           <form action="/admin/logout/" method="post"><?= Csrf::field() ?><button class="btn-ghost" type="submit">Sign out</button></form>
         </div>
@@ -81,10 +88,19 @@ $types = $postTypesNav ?? [];
     <div class="box glass">
       <div class="page-head">
         <h3>Media library</h3>
-        <button class="btn-ghost" type="button" data-media-close>Close</button>
+        <div class="toolbar">
+          <?php if (Auth::can('media.upload')): ?>
+            <label class="btn media-upload-btn">
+              Upload
+              <input type="file" data-media-upload multiple accept="image/*,video/*,.pdf" hidden>
+            </label>
+          <?php endif; ?>
+          <button class="btn-ghost" type="button" data-media-close>Close</button>
+        </div>
       </div>
       <input type="search" data-media-search placeholder="Search by file name or alt text">
-      <p class="hint">Dimensions and file size are shown so you can avoid oversized images.</p>
+      <p class="hint">Dimensions and file size are shown so you can avoid oversized images. Uploading here adds to the library and selects the file straight away.</p>
+      <p class="media-upload-status" data-media-status hidden></p>
       <div class="media-grid"></div>
     </div>
   </div>

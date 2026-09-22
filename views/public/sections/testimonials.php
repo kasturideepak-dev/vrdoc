@@ -8,7 +8,7 @@ $s = $s ?? ($settings ?? (class_exists('Settings') ? Settings::all() : []));
   <div class="container reviews">
     <div class="reviews__rail">
       <p class="reviews__label"><?= Html::e($c['label'] ?? 'Testimonials') ?></p>
-      <a class="apply-chip" href="https://wa.me/<?= Html::e($s['whatsapp'] ?? '15559412484') ?>" rel="noopener">Let’s chat <span class="apply-chip__mark">↗</span></a>
+      <a class="apply-chip" href="https://wa.me/<?= Html::e(Settings::contact()['whatsapp']) ?>" rel="noopener">Let’s chat <span class="apply-chip__mark">↗</span></a>
       <div class="reviews__nav">
         <button type="button" class="reviews__btn" data-rev-prev aria-label="Previous"></button>
         <button type="button" class="reviews__btn" data-rev-next aria-label="Next"></button>

@@ -9,6 +9,9 @@ $auth = ['auth' => true];
 if (Request::method() === 'OPTIONS' && str_starts_with(Request::path(), '/api/')) {
     Api::preflight();
 }
+if (str_starts_with(Request::path(), '/api/')) {
+    Api::throttle();
+}
 
 $r->get('/api/v1/bootstrap/', fn () => Api::bootstrap());
 $r->get('/api/v1/settings/', fn () => Api::settings());
@@ -65,6 +68,11 @@ $r->get('/admin/post-types/(?P<id>\d+)/new-template/', fn ($id) => AdminPostType
 $r->get('/admin/post-types/(?P<id>\d+)/confirm-delete/', fn ($id) => AdminPostTypes::confirmDelete($id), $auth + ['perm' => 'post_types.delete']);
 $r->get('/admin/post-types/(?P<id>\d+)/', fn ($id) => AdminPostTypes::form($id), $auth + ['perm' => 'post_types.edit']);
 $r->post('/admin/post-types/', fn () => AdminPostTypes::save(), $auth);
+$r->get('/admin/post-types/(?P<id>\d+)/taxonomies/', fn ($id) => AdminTaxonomies::index($id), $auth + ['perm' => 'post_types.view']);
+$r->post('/admin/post-types/(?P<id>\d+)/taxonomies/', fn ($id) => AdminTaxonomies::save($id), $auth + ['perm' => 'post_types.edit']);
+$r->post('/admin/post-types/(?P<id>\d+)/taxonomies/delete/', fn ($id) => AdminTaxonomies::delete($id), $auth + ['perm' => 'post_types.edit']);
+$r->post('/admin/post-types/(?P<id>\d+)/taxonomies/term-save/', fn ($id) => AdminTaxonomies::termSave($id), $auth + ['perm' => 'post_types.edit']);
+$r->post('/admin/post-types/(?P<id>\d+)/taxonomies/term-delete/', fn ($id) => AdminTaxonomies::termDelete($id), $auth + ['perm' => 'post_types.edit']);
 $r->post('/admin/post-types/delete/', fn () => AdminPostTypes::delete(), $auth + ['perm' => 'post_types.delete']);
 $r->post('/admin/post-types/archive/', fn () => AdminPostTypes::archive(), $auth + ['perm' => 'post_types.edit']);
 $r->post('/admin/post-types/restore/', fn () => AdminPostTypes::restore(), $auth + ['perm' => 'post_types.edit']);
@@ -75,9 +83,12 @@ $r->get('/admin/content/(?P<type>[a-z0-9-]+)/(?P<id>\d+)/', fn ($t, $id) => Admi
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/', fn ($t) => AdminEntries::save($t), $auth);
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/(?P<id>\d+)/section/', fn ($t, $id) => AdminEntries::addSection($t, $id), $auth + ['perm' => 'entries.edit']);
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/(?P<id>\d+)/section-template/', fn ($t, $id) => AdminEntries::saveSectionTemplate($t, $id), $auth + ['perm' => 'templates.create']);
+$r->post('/admin/content/(?P<type>[a-z0-9-]+)/(?P<id>\d+)/body-to-section/', fn ($t, $id) => AdminEntries::bodyToSection($t, $id), $auth + ['perm' => 'entries.edit']);
+$r->post('/admin/content/(?P<type>[a-z0-9-]+)/(?P<id>\d+)/section-unlink/', fn ($t, $id) => AdminEntries::unlinkSection($t, $id), $auth + ['perm' => 'entries.edit']);
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/(?P<id>\d+)/section-delete/', fn ($t, $id) => AdminEntries::deleteSection($t, $id), $auth + ['perm' => 'entries.edit']);
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/(?P<id>\d+)/publish/', fn ($t, $id) => AdminEntries::publish($t, $id), $auth + ['perm' => 'entries.publish']);
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/(?P<id>\d+)/preview/', fn ($t, $id) => AdminEntries::preview($t, $id), $auth + ['perm' => 'entries.view']);
+$r->post('/admin/content/(?P<type>[a-z0-9-]+)/bulk/', fn ($t) => AdminEntries::bulk($t), $auth + ['perm' => 'entries.edit']);
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/trash/', fn ($t) => AdminEntries::trash($t), $auth + ['perm' => 'entries.delete']);
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/restore/', fn ($t) => AdminEntries::restore($t), $auth + ['perm' => 'entries.edit']);
 $r->post('/admin/content/(?P<type>[a-z0-9-]+)/delete/', fn ($t) => AdminEntries::destroy($t), $auth + ['perm' => 'entries.delete']);
@@ -162,6 +173,7 @@ $r->get('/admin/templates/sections/(?P<id>\d+)/', fn ($id) => AdminTemplates::se
 $r->post('/admin/templates/sections/', fn () => AdminTemplates::sectionSave(), $auth);
 $r->post('/admin/templates/sections/duplicate/', fn () => AdminTemplates::sectionDuplicate(), $auth + ['perm' => 'templates.create']);
 $r->post('/admin/templates/sections/delete/', fn () => AdminTemplates::sectionDelete(), $auth + ['perm' => 'templates.delete']);
+$r->get('/admin/revisions/(?P<owner>page|cpt)/(?P<id>\d+)/compare/', fn ($o, $id) => AdminRevisions::compare($o, $id), $auth);
 $r->get('/admin/api/slug-check/', fn () => AdminContent::slugCheck(), $auth);
 
 $r->post('/enquire/', fn () => AdminForms::submit(), ['no_csrf' => false]);

@@ -7,10 +7,10 @@ $GLOBALS['vr_extra_stylesheets'] = [
     $asset . 'css/tokens.css',
     // base.css owns `.container` — its max width AND `margin-inline: auto`.
     // Without it every section here renders 1280px wide but flush left.
-    $asset . 'css/base.css',
+    site_asset($asset, 'css/base.css'),
     $asset . 'css/components.css?v=float-right',
     $asset . 'css/sections.css?v=ai-1',
-    $asset . 'css/pages.css?v=blog-5',
+    site_asset($asset, 'css/pages.css'),
 ];
 $GLOBALS['vr_extra_scripts'] = [
     $asset . 'js/main.js?v=reels-1',

@@ -41,6 +41,10 @@ final class AdminAuth
 
     public static function twoFactor(): void
     {
+        if (RateLimit::hit('2fa:ip:' . Request::ip(), 20, 900)) {
+            View::flash('error', 'Too many attempts. Try again in 15 minutes.');
+            View::redirect('/admin/login/2fa/');
+        }
         $code = Request::str('code');
         if (Auth::verifyTwoFactor($code)) {
             View::redirect('/admin/');
@@ -62,7 +66,13 @@ final class AdminAuth
 
     public static function forgot(): void
     {
-        Auth::createReset(Request::str('email'));
+        $email = Request::str('email');
+        // Always the same reply, so the limit doesn't reveal which emails exist.
+        $overIp = RateLimit::hit('forgot:ip:' . Request::ip(), 10, 3600);
+        $overEmail = $email !== '' && RateLimit::hit('forgot:email:' . RateLimit::key($email), 3, 3600);
+        if (!$overIp && !$overEmail) {
+            Auth::createReset($email);
+        }
         View::flash('success', 'If that email is on file, a reset link is on its way.');
         View::redirect('/admin/login/');
     }

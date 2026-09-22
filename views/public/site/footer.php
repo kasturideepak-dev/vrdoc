@@ -15,19 +15,15 @@ $address = vr_option('address', "VR Doctors Academy\nPlot No 29, Mathrusree Naga
 				</p>
 			</div>
 			<div>
-				<h3 class="font-bold text-lg mb-4">Quick Links</h3>
+				<h3 class="font-bold text-lg mb-4 text-white">Quick Links</h3>
 				<ul class="space-y-3 text-gray-300">
-					<li><a href="<?php echo esc_url(home_url('/')); ?>" class="hover:text-orange-400 transition">Home</a></li>
-					<li><a href="<?php echo esc_url(home_url('/bipc-careers/')); ?>" class="hover:text-orange-400 transition">World of BiPC</a></li>
-					<li><a href="<?php echo esc_url(home_url('/about/')); ?>" class="hover:text-orange-400 transition">About</a></li>
-					<li><a href="<?php echo esc_url(home_url('/courses/')); ?>" class="hover:text-orange-400 transition">Courses</a></li>
-					<li><a href="<?php echo esc_url(home_url('/results/')); ?>" class="hover:text-orange-400 transition">Results</a></li>
-					<li><a href="<?php echo esc_url(home_url('/blog/')); ?>" class="hover:text-orange-400 transition">Blog</a></li>
-					<li><a href="<?php echo esc_url(home_url('/contact/')); ?>" class="hover:text-orange-400 transition">Contact</a></li>
-				</ul>
+					<?php foreach ((class_exists('Menu') ? Menu::tree('footer') : []) as $it): ?>
+						<li><a href="<?php echo esc_url($it['url']); ?>" class="hover:text-orange-400 transition"><?php echo esc_html($it['label']); ?></a></li>
+					<?php endforeach; ?>
+					</ul>
 			</div>
 			<div>
-				<h3 class="font-bold text-lg mb-4">Contact Information</h3>
+				<h3 class="font-bold text-lg mb-4 text-white">Contact Information</h3>
 				<div class="space-y-4 text-gray-300">
 					<div class="flex items-start gap-3">
 						<i class="fa-solid fa-phone mt-1 text-orange-400 shrink-0"></i>
@@ -53,7 +49,7 @@ $address = vr_option('address', "VR Doctors Academy\nPlot No 29, Mathrusree Naga
 				</div>
 			</div>
 			<div>
-				<h3 class="font-bold text-lg mb-4">Connect With Us</h3>
+				<h3 class="font-bold text-lg mb-4 text-white">Connect With Us</h3>
 				<p class="text-gray-300 mb-5">Follow student achievements, campus life and important updates.</p>
 				<div class="flex gap-5 text-2xl">
 					<a href="<?php echo esc_url(vr_option('facebook', 'https://www.facebook.com/VR.Jr.College')); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-orange-400 transition" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>

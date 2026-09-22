@@ -39,7 +39,25 @@ function asset_url(string $path): string
 /** Admin CSS/JS. Lives in public/assets-admin; also copied to /assets-admin on Hostinger. */
 function admin_asset(string $path): string
 {
-    return '/assets-admin/' . ltrim($path, '/');
+    $path = ltrim($path, '/');
+    return '/assets-admin/' . $path . asset_version(ROOT . '/public/assets-admin/' . $path);
+}
+
+/**
+ * "?v=<mtime>" for a file on disk. The CDN tells browsers to keep CSS/JS for
+ * a week, so an unversioned URL keeps serving the old file after a deploy.
+ */
+function asset_version(string $file): string
+{
+    $t = @filemtime($file);
+    return $t ? '?v=' . base_convert((string) $t, 10, 36) : '';
+}
+
+/** Versioned URL for a file under assets/ (public site). */
+function site_asset(string $asset, string $path): string
+{
+    $path = ltrim($path, '/');
+    return $asset . $path . asset_version(ROOT . '/assets/' . $path);
 }
 
 /**

@@ -274,7 +274,9 @@ final class AdminForms
             'SELECT COUNT(*) c FROM form_submissions WHERE ip = ? AND created_at > DATE_SUB(NOW(), INTERVAL 2 MINUTE)',
             [$ip]
         );
-        if ((int) ($recent['c'] ?? 0) >= 5) {
+        // The count above only sees saved submissions; this also caps failed
+        // ones (bad captcha, missing fields) that would otherwise be unlimited.
+        if ((int) ($recent['c'] ?? 0) >= 5 || RateLimit::hit('form:ip:' . $ip, 30, 600)) {
             View::flash('error', 'Please wait a moment before submitting again.');
             View::redirect($_SERVER['HTTP_REFERER'] ?? '/');
         }

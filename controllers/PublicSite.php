@@ -130,6 +130,22 @@ final class PublicSite
                 }
             }
         }
+        // /{type}/{taxonomy}/{term}/ — three segments, so it cannot collide
+        // with an entry URL.
+        if (count($parts) === 3) {
+            $type = Cpt::type($parts[0]);
+            if ($type && (int) $type['public'] === 1) {
+                Taxonomy::ensureSchema();
+                $tax = Taxonomy::bySlug((int) $type['id'], $parts[1]);
+                if ($tax && (int) $tax['public'] === 1) {
+                    $term = Taxonomy::term((int) $tax['id'], $parts[2]);
+                    if ($term) {
+                        self::renderTermArchive($type, $tax, $term);
+                        return;
+                    }
+                }
+            }
+        }
 
         self::notFound();
     }
@@ -294,6 +310,37 @@ final class PublicSite
             'short-term-neet-program-hyderabad' => 'site/short-term-neet-program-hyderabad',
         ];
         return $map[$slug] ?? 'page';
+    }
+
+    /** Entries of a post type carrying one term. */
+    private static function renderTermArchive(array $type, array $tax, array $term): void
+    {
+        $entries = Taxonomy::entriesForTerm((int) $term['id']);
+        $title = $term['name'] . ' — ' . $type['name'];
+        $seo = Database::one(
+            'SELECT * FROM seo_metadata WHERE entity_type = ? AND entity_id = ?',
+            ['term', (int) $term['id']]
+        ) ?: [];
+        if (empty($seo['seo_title'])) {
+            $seo['seo_title'] = $title . ' | VR Doctors';
+        }
+        if (empty($seo['meta_description']) && !empty($term['description'])) {
+            $seo['meta_description'] = mb_substr(strip_tags((string) $term['description']), 0, 160);
+        }
+        $seo['canonical_url'] = url($type['slug'] . '/' . $tax['slug'] . '/' . $term['slug']);
+        View::public('cpt-term', self::ctx([
+            'type' => $type,
+            'taxonomy' => $tax,
+            'term' => $term,
+            'terms' => Taxonomy::terms((int) $tax['id']),
+            'entries' => $entries,
+            'seo' => $seo,
+            'breadcrumbs' => [
+                ['Home', '/'],
+                [$type['name'], (int) $type['has_archive'] ? Cpt::archiveUrl($type) : null],
+                [$term['name'], null],
+            ],
+        ]));
     }
 
     private static function renderCptArchive(array $type): void

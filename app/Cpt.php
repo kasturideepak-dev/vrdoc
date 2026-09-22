@@ -119,6 +119,102 @@ final class Cpt
         return $row;
     }
 
+    /** Entries linked from $entryId through a relation field. */
+    public static function related(int $entryId, string $fieldName, bool $publishedOnly = true): array
+    {
+        try {
+            $sql = 'SELECT e.* FROM entry_relations r
+                    JOIN cpt_entries e ON e.id = r.to_entry_id
+                    WHERE r.from_entry_id = ? AND r.field_name = ? AND e.deleted_at IS NULL';
+            if ($publishedOnly) {
+                $sql .= ' AND e.status = "published"';
+            }
+            $sql .= ' ORDER BY r.sort_order, e.title';
+            $rows = Database::all($sql, [$entryId, $fieldName]);
+        } catch (Throwable $e) {
+            return [];
+        }
+        foreach ($rows as &$r) {
+            $r['_fields'] = json_decode($r['fields_json'] ?: '{}', true) ?: [];
+        }
+        return $rows;
+    }
+
+    /** Entries pointing AT this one — the reverse side of a relation. */
+    public static function relatedInverse(int $entryId, ?string $fieldName = null): array
+    {
+        try {
+            $sql = 'SELECT e.*, r.field_name FROM entry_relations r
+                    JOIN cpt_entries e ON e.id = r.from_entry_id
+                    WHERE r.to_entry_id = ? AND e.deleted_at IS NULL AND e.status = "published"';
+            $params = [$entryId];
+            if ($fieldName !== null) {
+                $sql .= ' AND r.field_name = ?';
+                $params[] = $fieldName;
+            }
+            return Database::all($sql . ' ORDER BY e.title', $params);
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    /** Ids currently linked from an entry for one field. @return list<int> */
+    public static function relationIds(int $entryId, string $fieldName): array
+    {
+        try {
+            return array_map(
+                static fn ($r) => (int) $r['to_entry_id'],
+                Database::all(
+                    'SELECT to_entry_id FROM entry_relations WHERE from_entry_id = ? AND field_name = ? ORDER BY sort_order',
+                    [$entryId, $fieldName]
+                )
+            );
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    /** Replace the links for one relation field. */
+    public static function setRelations(int $entryId, string $fieldName, array $toIds): void
+    {
+        try {
+            Database::delete('entry_relations', 'from_entry_id = ? AND field_name = ?', [$entryId, $fieldName]);
+            $seen = [];
+            foreach ($toIds as $i => $to) {
+                $to = (int) $to;
+                if ($to <= 0 || $to === $entryId || isset($seen[$to])) {
+                    continue;
+                }
+                $seen[$to] = true;
+                Database::insert('entry_relations', [
+                    'from_entry_id' => $entryId,
+                    'to_entry_id' => $to,
+                    'field_name' => $fieldName,
+                    'sort_order' => (int) $i,
+                ]);
+            }
+        } catch (Throwable $e) {
+            error_log('Cpt::setRelations: ' . $e->getMessage());
+        }
+    }
+
+    /** Choices for a relation picker: published entries of the target type. */
+    public static function relationChoices(string $targetTypeSlug, int $excludeId = 0): array
+    {
+        $type = self::type($targetTypeSlug);
+        if (!$type) {
+            return [];
+        }
+        $sql = 'SELECT id, title, slug, status FROM cpt_entries
+                WHERE post_type_id = ? AND deleted_at IS NULL';
+        $params = [(int) $type['id']];
+        if ($excludeId > 0) {
+            $sql .= ' AND id <> ?';
+            $params[] = $excludeId;
+        }
+        return Database::all($sql . ' ORDER BY sort_order, title', $params);
+    }
+
     public static function saveFieldsFromRequest(array $fieldDefs): array
     {
         $out = [];
@@ -127,6 +223,9 @@ final class Cpt
             $type = $f['type'];
             if ($type === 'checkbox') {
                 $out[$name] = Request::bool('f_' . $name) ? '1' : '0';
+                continue;
+            }
+            if ($type === 'relation') {
                 continue;
             }
             if ($type === 'repeater') {
@@ -421,6 +520,7 @@ final class Cpt
         }
         $done = true;
         Templates::ensureSchema();
+        Taxonomy::ensureSchema();
         try {
             $col = Database::all("SHOW COLUMNS FROM post_types LIKE 'is_system'");
             if (!$col) {

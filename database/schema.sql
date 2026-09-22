@@ -185,6 +185,7 @@ CREATE TABLE IF NOT EXISTS content_sections (
   sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   is_visible TINYINT(1) NOT NULL DEFAULT 1,
   section_template_id INT UNSIGNED NULL,
+  is_linked TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -261,6 +262,57 @@ CREATE TABLE IF NOT EXISTS post_types (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_post_types_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS taxonomies (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  post_type_id INT UNSIGNED NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  singular_name VARCHAR(120) NOT NULL,
+  slug VARCHAR(80) NOT NULL,
+  description VARCHAR(255) NULL,
+  hierarchical TINYINT(1) NOT NULL DEFAULT 0,
+  public TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_tax_type_slug (post_type_id, slug),
+  KEY idx_tax_type (post_type_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS terms (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  taxonomy_id INT UNSIGNED NOT NULL,
+  parent_id INT UNSIGNED NULL,
+  name VARCHAR(190) NOT NULL,
+  slug VARCHAR(190) NOT NULL,
+  description TEXT NULL,
+  sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_term_tax_slug (taxonomy_id, slug),
+  KEY idx_term_tax (taxonomy_id),
+  KEY idx_term_parent (parent_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS term_entries (
+  term_id INT UNSIGNED NOT NULL,
+  entry_id INT UNSIGNED NOT NULL,
+  sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (term_id, entry_id),
+  KEY idx_te_entry (entry_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS entry_relations (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  from_entry_id INT UNSIGNED NOT NULL,
+  to_entry_id INT UNSIGNED NOT NULL,
+  field_name VARCHAR(60) NOT NULL,
+  sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_rel (from_entry_id, to_entry_id, field_name),
+  KEY idx_rel_from (from_entry_id, field_name),
+  KEY idx_rel_to (to_entry_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS post_type_fields (

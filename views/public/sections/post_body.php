@@ -41,9 +41,15 @@ $body = Html::allowedHtml((string) ($c['html'] ?? ''));
             ?>
               <li class="post-side__item">
                 <a class="post-side__link" href="<?= Html::e($url) ?>">
+                  <?php /* Always hold the thumbnail slot: without it, image-less posts
+                     dropped into the 76px image column and wrapped word by word. */ ?>
                   <?php if ($img !== ''): ?>
                     <span class="post-side__thumb">
                       <img src="<?= Html::e($img) ?>" alt="" loading="lazy" width="120" height="80">
+                    </span>
+                  <?php else: ?>
+                    <span class="post-side__thumb is-empty" aria-hidden="true">
+                      <?= Html::e(mb_strtoupper(mb_substr(trim((string) $p['title']), 0, 1)) ?: '•') ?>
                     </span>
                   <?php endif; ?>
                   <span class="post-side__copy">

@@ -16,7 +16,8 @@ if (!$faqs) {
     $faqs = Database::all('SELECT * FROM faqs WHERE is_visible=1 AND entity_type="global" ORDER BY sort_order, id');
 }
 ?>
-<section class="section" id="faq">
+<?php $faqVariant = SectionRegistry::variant('faq', $c ?? []); ?>
+<section class="section faq-sec is-<?= Html::e($faqVariant) ?>" id="faq">
   <div class="container faq-wrap">
     <div class="section-head is-center"><div><?php if (!empty($c['kicker'])): ?><span class="pill"><?= Html::e($c['kicker']) ?></span><?php endif; ?><h2><?= Html::e($c['heading'] ?? '') ?></h2></div></div>
     <div class="faq" data-faq>

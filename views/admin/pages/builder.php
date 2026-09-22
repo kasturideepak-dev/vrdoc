@@ -119,7 +119,13 @@ if ($focusSec && !in_array($focusSec, $ids, true) && $sections) {
                     <?php $name = $fname; $label = $f['l']; require ROOT . '/views/admin/partials/wysiwyg.php'; ?>
                   <?php else: ?>
                     <label class="lab"><?= Html::e($f['l']) ?>
-                      <?php if ($f['t'] === 'textarea'): ?>
+                      <?php if ($f['t'] === 'select'): ?>
+                        <select name="<?= Html::e($fname) ?>">
+                          <?php foreach (($f['opts'] ?? []) as $ov => $ol): ?>
+                            <option value="<?= Html::e((string) $ov) ?>"<?= Html::selected($val, (string) $ov) ?>><?= Html::e($ol) ?></option>
+                          <?php endforeach; ?>
+                        </select>
+                      <?php elseif ($f['t'] === 'textarea'): ?>
                         <textarea name="<?= Html::e($fname) ?>"><?= Html::e($val) ?></textarea>
                       <?php else: ?>
                         <input name="<?= Html::e($fname) ?>" value="<?= Html::e($val) ?>">

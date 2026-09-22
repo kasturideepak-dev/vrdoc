@@ -33,10 +33,35 @@ final class Api
         header('Access-Control-Max-Age: 86400');
     }
 
+    /**
+     * Per-IP limits for the public API: reads are cheap but not free (bootstrap
+     * runs ~15 queries), and form posts can trigger captcha checks and email.
+     */
+    public static function throttle(): void
+    {
+        $post = Request::method() === 'POST';
+        [$max, $window] = $post ? [30, 600] : [120, 60];
+        if (!RateLimit::hit(($post ? 'api-post:' : 'api:') . Request::ip(), $max, $window)) {
+            return;
+        }
+        self::cors();
+        header('Retry-After: ' . RateLimit::retryAfter($window));
+        View::json(['ok' => false, 'error' => 'rate_limited', 'message' => 'Too many requests. Please try again shortly.'], 429);
+    }
+
     public static function bootstrap(): void
     {
         self::cors();
-        View::json([
+        // Cached for a minute; every admin save calls Cache::flush(), so edits
+        // still show straight away.
+        $cached = Cache::get('api:bootstrap');
+        if ($cached !== null) {
+            header('Content-Type: application/json; charset=utf-8');
+            header('X-Cache: HIT');
+            echo $cached;
+            exit;
+        }
+        $payload = [
             'ok' => true,
             'site' => self::sitePayload(),
             'menus' => self::menuPayload(),
@@ -52,7 +77,12 @@ final class Api
             'timeline' => self::cptRows('timeline'),
             'faqs' => self::faqRows(),
             'pages' => self::pageIndex(),
-        ]);
+        ];
+        $json = Html::json($payload);
+        Cache::set('api:bootstrap', $json, 60);
+        header('Content-Type: application/json; charset=utf-8');
+        echo $json;
+        exit;
     }
 
     public static function settings(): void

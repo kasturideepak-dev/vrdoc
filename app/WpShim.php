@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
     define('ABSPATH', ROOT . '/');
 }
 if (!defined('VR_DOCTORS_VERSION')) {
-    define('VR_DOCTORS_VERSION', '1.5.1');
+    define('VR_DOCTORS_VERSION', '1.5.2');
 }
 if (!defined('VR_DOCTORS_DIR')) {
     define('VR_DOCTORS_DIR', ROOT . '/views/public/site');

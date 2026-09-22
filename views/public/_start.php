@@ -26,11 +26,14 @@ $navCurrent = static function (string $url) use ($path): bool {
     }
     return $path === $u || str_starts_with($path, $u);
 };
-$phone1 = $s['phone_primary'] ?? '+91 89298 28498';
-$phone1tel = preg_replace('/\D+/', '', $phone1);
-$phone2 = $s['phone_secondary'] ?? '+91 92569 25643';
-$phone2tel = preg_replace('/\D+/', '', $phone2);
-$wa = $s['whatsapp'] ?? '15559412484';
+// Empty settings count as missing, and fallbacks are the academy's real
+// numbers (the old ones here were stale). See Settings::contact().
+$ct = Settings::contact();
+$phone1 = $ct['phone1'];
+$phone1tel = $ct['phone1tel'];
+$phone2 = $ct['phone2'];
+$phone2tel = $ct['phone2tel'];
+$wa = $ct['whatsapp'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -56,10 +59,10 @@ $wa = $s['whatsapp'] ?? '15559412484';
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= $asset ?>css/tokens.css">
-  <link rel="stylesheet" href="<?= $asset ?>css/base.css">
+  <link rel="stylesheet" href="<?= Html::e(site_asset($asset, 'css/base.css')) ?>">
   <link rel="stylesheet" href="<?= $asset ?>css/components.css?v=float-right">
   <link rel="stylesheet" href="<?= $asset ?>css/sections.css?v=blog-4">
-  <link rel="stylesheet" href="<?= $asset ?>css/pages.css">
+  <link rel="stylesheet" href="<?= Html::e(site_asset($asset, 'css/pages.css')) ?>">
   <?php if (!empty($s['schema_json'])): ?>
     <script type="application/ld+json"><?= $s['schema_json'] ?></script>
   <?php endif; ?>

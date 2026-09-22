@@ -35,6 +35,7 @@ final class AdminEntries
             return;
         }
         Templates::ensureStarters();
+        Cpt::ensureSchema();
         $fields = Cpt::fields((int) $type['id']);
         $values = $row ? (json_decode($row['fields_json'] ?: '{}', true) ?: []) : [];
         $sections = $row ? Content::sections('cpt', (int) $row['id']) : [];
@@ -60,6 +61,11 @@ final class AdminEntries
             'defaultTemplateId' => $defaultTemplateId,
             'defaultTemplate' => $defaultTemplateId ? Templates::page($defaultTemplateId) : null,
             'bannerMode' => in_array('ai_banner', $sectionTypes, true),
+            'taxonomies' => array_map(static function (array $t): array {
+                $t['terms'] = Taxonomy::terms((int) $t['id']);
+                return $t;
+            }, Taxonomy::forType((int) $type['id'])),
+            'entryTermIds' => $row ? Taxonomy::entryTermIds((int) $row['id']) : [],
             'ownerType' => 'cpt',
             'ownerId' => $row ? (int) $row['id'] : 0,
             'publicPath' => $row ? Cpt::permalink($row, $type) : path_url($type['slug'] . '/new'),
@@ -100,14 +106,26 @@ final class AdminEntries
             'title' => $title,
             'slug' => $slug,
             'status' => $status,
-            'excerpt' => Request::str('excerpt'),
-            'featured_image' => Request::str('featured_image'),
-            'body_html' => Html::allowedHtml((string) ($_POST['body_html'] ?? '')),
             'fields_json' => Html::json($values),
             'sort_order' => Request::int('sort_order'),
             'author_id' => Auth::id(),
             'scheduled_at' => $status === 'scheduled' ? (Request::str('scheduled_at') ?: null) : null,
         ];
+        // Excerpt, image and body are only rendered when the post type supports
+        // them (and body only when the entry has no sections). Only write what
+        // the form actually sent, so hiding a field never blanks stored data.
+        foreach (['excerpt', 'featured_image'] as $k) {
+            if (array_key_exists($k, $_POST)) {
+                $data[$k] = Request::str($k);
+            } elseif (!$id) {
+                $data[$k] = '';
+            }
+        }
+        if (array_key_exists('body_html', $_POST)) {
+            $data['body_html'] = Html::allowedHtml((string) $_POST['body_html']);
+        } elseif (!$id) {
+            $data['body_html'] = null;
+        }
         if ($id) {
             Database::update('cpt_entries', $data, 'id = ?', [$id]);
             if ($old && $old['slug'] !== $slug && $old['status'] === 'published' && (int) $type['public']) {
@@ -124,6 +142,16 @@ final class AdminEntries
         }
         if ($old && in_array($type['template_mode'], ['builder', 'both'], true)) {
             Content::saveSectionsFromPost('cpt', $id);
+        }
+        foreach ($fieldDefs as $fd) {
+            if (($fd['type'] ?? '') !== 'relation') {
+                continue;
+            }
+            $posted = $_POST['rel_' . $fd['name']] ?? [];
+            Cpt::setRelations($id, (string) $fd['name'], is_array($posted) ? $posted : []);
+        }
+        if (Taxonomy::forType((int) $type['id'])) {
+            Taxonomy::setEntryTerms($id, Taxonomy::termIdsFromRequest());
         }
         $seo = Content::seoFromRequest();
         $seo = Content::fillCanonical($seo, $type['slug'] . '/' . $slug);
@@ -149,10 +177,139 @@ final class AdminEntries
         View::redirect('/admin/content/' . $typeSlug . '/' . $id . '/');
     }
 
+    /** Apply one action to many entries at once. */
+    public static function bulk(string $typeSlug): void
+    {
+        $type = Cpt::type($typeSlug);
+        if (!$type) {
+            View::redirect('/admin/post-types/');
+        }
+        $ids = array_values(array_filter(array_map('intval', (array) ($_POST['ids'] ?? [])), static fn ($i) => $i > 0));
+        $action = Request::str('bulk_action');
+        $back = '/admin/content/' . $typeSlug . '/';
+        if (!$ids || $action === '') {
+            View::flash('error', 'Pick at least one entry and an action.');
+            View::redirect($back);
+        }
+        $perm = match ($action) {
+            'publish', 'unpublish' => 'entries.publish',
+            'trash', 'delete' => 'entries.delete',
+            default => 'entries.edit',
+        };
+        Auth::requirePerm($perm);
+
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $scoped = array_merge($ids, [(int) $type['id']]);
+        $n = 0;
+        switch ($action) {
+            case 'publish':
+                foreach ($ids as $id) {
+                    $own = Database::one('SELECT id FROM cpt_entries WHERE id = ? AND post_type_id = ?', [$id, (int) $type['id']]);
+                    if ($own) {
+                        Content::publish('cpt', $id);
+                        $n++;
+                    }
+                }
+                break;
+            case 'unpublish':
+                $n = Database::query(
+                    'UPDATE cpt_entries SET status = "unpublished" WHERE id IN (' . $in . ') AND post_type_id = ?',
+                    $scoped
+                )->rowCount();
+                break;
+            case 'trash':
+                $n = Database::query(
+                    'UPDATE cpt_entries SET deleted_at = NOW(), status = "unpublished"
+                     WHERE id IN (' . $in . ') AND post_type_id = ?',
+                    $scoped
+                )->rowCount();
+                break;
+            case 'restore':
+                $n = Database::query(
+                    'UPDATE cpt_entries SET deleted_at = NULL, status = "draft"
+                     WHERE id IN (' . $in . ') AND post_type_id = ?',
+                    $scoped
+                )->rowCount();
+                break;
+            case 'delete':
+                Database::query('DELETE FROM content_sections WHERE owner_type = "cpt" AND owner_id IN (' . $in . ')', $ids);
+                Database::query('DELETE FROM term_entries WHERE entry_id IN (' . $in . ')', $ids);
+                Database::query('DELETE FROM entry_relations WHERE from_entry_id IN (' . $in . ') OR to_entry_id IN (' . $in . ')', array_merge($ids, $ids));
+                $n = Database::query(
+                    'DELETE FROM cpt_entries WHERE id IN (' . $in . ') AND post_type_id = ?',
+                    $scoped
+                )->rowCount();
+                break;
+            default:
+                View::flash('error', 'Unknown action.');
+                View::redirect($back);
+        }
+        Audit::log('entry.bulk', 'cpt', 0, ['action' => $action, 'count' => $n, 'type' => $typeSlug]);
+        Cache::flush();
+        View::flash('success', $n . ' ' . ($n === 1 ? 'entry' : 'entries') . ' ' . $action . 'd.');
+        View::redirect($back . ($action === 'trash' || $action === 'delete' ? '' : ''));
+    }
+
     public static function addSection(string $typeSlug, string $id): void
     {
         Auth::requirePerm('entries.edit');
-        Content::addSection('cpt', (int) $id, Request::str('type'), Request::int('section_template_id') ?: null);
+        Content::addSection(
+            'cpt',
+            (int) $id,
+            Request::str('type'),
+            Request::int('section_template_id') ?: null,
+            Request::bool('linked')
+        );
+        View::redirect('/admin/content/' . $typeSlug . '/' . $id . '/#builder');
+    }
+
+    /**
+     * Turn an entry's Body text into a Rich text section.
+     *
+     * Once a page has sections the site renders only those, so body text left
+     * over from before is invisible. This moves it where it will show.
+     */
+    public static function bodyToSection(string $typeSlug, string $id): void
+    {
+        Auth::requirePerm('entries.edit');
+        $type = Cpt::type($typeSlug);
+        $row = $type ? Database::one(
+            'SELECT * FROM cpt_entries WHERE id = ? AND post_type_id = ?',
+            [(int) $id, (int) $type['id']]
+        ) : null;
+        $back = '/admin/content/' . $typeSlug . '/' . (int) $id . '/#builder';
+        if (!$row || trim(strip_tags((string) $row['body_html'])) === '') {
+            View::flash('error', 'There is no body text to move.');
+            View::redirect($back);
+        }
+        $sid = Content::addSection('cpt', (int) $id, 'rich_text');
+        Database::update('content_sections', [
+            'content_json' => Html::json(['html' => Html::allowedHtml((string) $row['body_html'])]),
+        ], 'id = ?', [$sid]);
+        Database::update('cpt_entries', ['body_html' => null], 'id = ?', [(int) $id]);
+        Content::snapshot('cpt', (int) $id, false, 'Body moved into a Rich text section');
+        Audit::log('entry.body_to_section', 'cpt', (int) $id, ['section' => $sid]);
+        View::flash('success', 'Body text moved into a new Rich text section at the end of the page. Publish to make it live.');
+        View::redirect($back);
+    }
+
+    /** Break a global block's link so this page can customise its copy. */
+    public static function unlinkSection(string $typeSlug, string $id): void
+    {
+        Auth::requirePerm('entries.edit');
+        $sid = Request::int('section_id');
+        $sec = Database::one(
+            'SELECT * FROM content_sections WHERE id = ? AND owner_type="cpt" AND owner_id = ?',
+            [$sid, (int) $id]
+        );
+        if ($sec && !empty($sec['is_linked']) && !empty($sec['section_template_id'])) {
+            $tpl = Database::one('SELECT * FROM section_templates WHERE id = ?', [(int) $sec['section_template_id']]);
+            Database::update('content_sections', [
+                'is_linked' => 0,
+                'content_json' => $tpl['content_json'] ?? $sec['content_json'],
+            ], 'id = ?', [$sid]);
+            View::flash('success', 'Unlinked — this copy is now independent of the global block.');
+        }
         View::redirect('/admin/content/' . $typeSlug . '/' . $id . '/#builder');
     }
 

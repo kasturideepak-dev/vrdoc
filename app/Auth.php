@@ -100,12 +100,15 @@ final class Auth
     {
         $email = strtolower(trim($email));
         $ip = Request::ip();
+        // Per IP: 8 failures in 15 minutes stops one attacker guessing. Per
+        // account: a higher bar (20) still stops guesses spread over many IPs,
+        // without letting anyone lock the real admin out with a few bad tries.
         $fails = Database::one(
-            'SELECT COUNT(*) AS c FROM login_attempts
+            'SELECT SUM(ip = ?) AS by_ip, SUM(email = ?) AS by_email FROM login_attempts
              WHERE (email = ? OR ip = ?) AND success = 0 AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)',
-            [$email, $ip]
+            [$ip, $email, $email, $ip]
         );
-        if ((int) ($fails['c'] ?? 0) >= 8) {
+        if ((int) ($fails['by_ip'] ?? 0) >= 8 || (int) ($fails['by_email'] ?? 0) >= 20) {
             Database::insert('login_attempts', ['email' => $email, 'ip' => $ip, 'success' => 0]);
             return 'locked';
         }

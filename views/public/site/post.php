@@ -10,7 +10,7 @@ $allCategories = $allCategories ?? [];
 $tags = $tags ?? [];
 $GLOBALS['vr_extra_stylesheets'] = [
     $asset . 'css/tokens.css',
-    $asset . 'css/pages.css?v=blog-5',
+    site_asset($asset, 'css/pages.css'),
 ];
 $img = $post['featured_image'] ?? '';
 if ($img === '') {

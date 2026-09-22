@@ -15,29 +15,72 @@
   function initNav() {
     var toggle = qs("[data-mobile-toggle]");
     var menu = qs("[data-mobile-menu]");
-    var coursesToggle = qs("[data-mobile-courses-toggle]");
-    var courses = qs("[data-mobile-courses]");
-    var drop = qs("[data-courses-dropdown]");
-    var dropMenu = qs("[data-courses-menu]");
 
     if (toggle && menu) {
       toggle.addEventListener("click", function () {
         menu.classList.toggle("hidden");
       });
     }
-    if (coursesToggle && courses) {
-      coursesToggle.addEventListener("click", function () {
-        courses.classList.toggle("hidden");
+    // Menu links are managed in the admin, so the row can outgrow the bar at
+    // any width. When it does, fall back to the burger menu.
+    var nav = qs("[data-vr-nav]");
+    var desk = qs("[data-desktop-nav]");
+    if (nav && desk) {
+      var bar = desk.parentElement;
+      var fit = function () {
+        nav.classList.remove("vr-nav--compact");
+        if (getComputedStyle(desk).display === "none") return;
+        var used = 0;
+        Array.prototype.forEach.call(bar.children, function (el) {
+          if (getComputedStyle(el).display !== "none") used += el.getBoundingClientRect().width;
+        });
+        var cs = getComputedStyle(bar);
+        var room = bar.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        if (used > room - 16) nav.classList.add("vr-nav--compact");
+      };
+      var queued = false;
+      window.addEventListener("resize", function () {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(function () { queued = false; fit(); });
       });
+      fit();
+      // Web fonts change link widths once they load.
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
     }
-    if (drop && dropMenu) {
-      drop.addEventListener("mouseenter", function () {
-        dropMenu.classList.remove("hidden");
+
+    // Any menu item can have a dropdown (set in Admin → Menus), so bind every
+    // pair. On mobile each toggle opens the panel that directly follows it.
+    qsa("[data-mobile-courses-toggle]").forEach(function (btn) {
+      var panel = btn.nextElementSibling;
+      if (!panel || !panel.hasAttribute("data-mobile-courses")) return;
+      btn.addEventListener("click", function () {
+        panel.classList.toggle("hidden");
       });
+    });
+    qsa("[data-courses-dropdown]").forEach(function (drop) {
+      var dropMenu = qs("[data-courses-menu]", drop);
+      if (!dropMenu) return;
+      var show = function () {
+        dropMenu.classList.remove("hidden");
+        // A dropdown on one of the last links would run off the screen.
+        dropMenu.style.left = "";
+        dropMenu.style.right = "";
+        if (dropMenu.getBoundingClientRect().right > window.innerWidth - 8) {
+          dropMenu.style.left = "auto";
+          dropMenu.style.right = "0";
+        }
+      };
+      drop.addEventListener("mouseenter", show);
       drop.addEventListener("mouseleave", function () {
         dropMenu.classList.add("hidden");
       });
-    }
+      // Keyboard users reach the links by tabbing into the dropdown.
+      drop.addEventListener("focusin", show);
+      drop.addEventListener("focusout", function (e) {
+        if (!drop.contains(e.relatedTarget)) dropMenu.classList.add("hidden");
+      });
+    });
   }
 
   /* ——— Hero carousel ——— */

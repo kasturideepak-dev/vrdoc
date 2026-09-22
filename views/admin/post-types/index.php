@@ -52,6 +52,7 @@
               <?php if (Auth::can('templates.create')): ?>
                 <a class="btn-ghost" href="/admin/post-types/<?= (int) $r['id'] ?>/new-template/">New template</a>
               <?php endif; ?>
+              <a class="btn-ghost" href="/admin/post-types/<?= (int) $r['id'] ?>/taxonomies/">Taxonomies</a>
             <?php elseif (Auth::can('post_types.edit')): ?>
               <form method="post" action="/admin/post-types/restore/" style="display:inline"><?= Csrf::field() ?>
                 <input type="hidden" name="id" value="<?= (int) $r['id'] ?>">

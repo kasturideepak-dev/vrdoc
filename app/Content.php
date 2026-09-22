@@ -10,19 +10,78 @@ final class Content
             $sql .= ' AND is_visible = 1';
         }
         $sql .= ' ORDER BY sort_order, id';
-        return Database::all($sql, [$ownerType, $ownerId]);
+        return self::resolveLinked(Database::all($sql, [$ownerType, $ownerId]));
+    }
+
+    /**
+     * Swap in the live template content for any section marked as linked.
+     *
+     * Section templates were copy-on-insert: editing one never touched the
+     * pages already using it. A linked section keeps only the pointer, so one
+     * edit updates everywhere it appears.
+     *
+     * @param list<array<string,mixed>> $rows
+     * @return list<array<string,mixed>>
+     */
+    public static function resolveLinked(array $rows): array
+    {
+        $ids = [];
+        foreach ($rows as $r) {
+            if (!empty($r['is_linked']) && !empty($r['section_template_id'])) {
+                $ids[(int) $r['section_template_id']] = true;
+            }
+        }
+        if (!$ids) {
+            return $rows;
+        }
+        $ids = array_keys($ids);
+        try {
+            $in = implode(',', array_fill(0, count($ids), '?'));
+            $tpls = [];
+            foreach (Database::all('SELECT * FROM section_templates WHERE id IN (' . $in . ')', $ids) as $t) {
+                $tpls[(int) $t['id']] = $t;
+            }
+        } catch (Throwable $e) {
+            error_log('Content::resolveLinked: ' . $e->getMessage());
+            return $rows;
+        }
+        foreach ($rows as &$r) {
+            if (empty($r['is_linked']) || empty($r['section_template_id'])) {
+                continue;
+            }
+            $t = $tpls[(int) $r['section_template_id']] ?? null;
+            if (!$t) {
+                // Template was deleted — fall back to the stored copy.
+                $r['is_linked'] = 0;
+                continue;
+            }
+            $r['type'] = $t['type'];
+            $r['content_json'] = $t['content_json'];
+            $r['_linked_name'] = $t['name'];
+        }
+        return $rows;
     }
 
     public static function snapshot(string $ownerType, int $ownerId, bool $live, string $note = ''): void
     {
-        $sections = self::sections($ownerType, $ownerId);
+        // Read the raw rows: a linked block must be snapshotted as a pointer,
+        // not as a copy, or editing the global block would stop reaching the
+        // pages that already published it.
+        $sections = Database::all(
+            'SELECT * FROM content_sections WHERE owner_type = ? AND owner_id = ? ORDER BY sort_order, id',
+            [$ownerType, $ownerId]
+        );
         $pack = [];
         foreach ($sections as $s) {
-            $pack[] = [
+            $row = [
                 'type' => $s['type'],
                 'content' => json_decode($s['content_json'] ?: '{}', true) ?: [],
                 'is_visible' => (int) $s['is_visible'],
             ];
+            if (!empty($s['is_linked']) && !empty($s['section_template_id'])) {
+                $row['linked_template_id'] = (int) $s['section_template_id'];
+            }
+            $pack[] = $row;
         }
         $seoType = $ownerType === 'cpt' ? 'cpt' : $ownerType;
         $seo = Database::one('SELECT * FROM seo_metadata WHERE entity_type = ? AND entity_id = ?', [$seoType, $ownerId]) ?: [];
@@ -45,7 +104,42 @@ final class Content
             'SELECT snapshot_json FROM content_revisions WHERE owner_type = ? AND owner_id = ? AND is_live = 1 ORDER BY id DESC LIMIT 1',
             [$ownerType, $ownerId]
         );
-        return $rev ? (json_decode($rev['snapshot_json'], true) ?: null) : null;
+        $snap = $rev ? (json_decode($rev['snapshot_json'], true) ?: null) : null;
+        return $snap ? self::resolveSnapshotLinks($snap) : null;
+    }
+
+    /** Pull current content for any block the snapshot stored as a pointer. */
+    public static function resolveSnapshotLinks(array $snap): array
+    {
+        $ids = [];
+        foreach ($snap['sections'] ?? [] as $s) {
+            if (!empty($s['linked_template_id'])) {
+                $ids[(int) $s['linked_template_id']] = true;
+            }
+        }
+        if (!$ids) {
+            return $snap;
+        }
+        try {
+            $ids = array_keys($ids);
+            $in = implode(',', array_fill(0, count($ids), '?'));
+            $tpls = [];
+            foreach (Database::all('SELECT * FROM section_templates WHERE id IN (' . $in . ')', $ids) as $t) {
+                $tpls[(int) $t['id']] = $t;
+            }
+        } catch (Throwable $e) {
+            error_log('Content::resolveSnapshotLinks: ' . $e->getMessage());
+            return $snap;
+        }
+        foreach ($snap['sections'] as &$s) {
+            $tid = (int) ($s['linked_template_id'] ?? 0);
+            if ($tid === 0 || !isset($tpls[$tid])) {
+                continue;
+            }
+            $s['type'] = $tpls[$tid]['type'];
+            $s['content'] = json_decode($tpls[$tid]['content_json'] ?: '{}', true) ?: [];
+        }
+        return $snap;
     }
 
     public static function saveSectionsFromPost(string $ownerType, int $ownerId): void
@@ -59,6 +153,17 @@ final class Content
                 [$sid, $ownerType, $ownerId]
             );
             if (!$sec) {
+                continue;
+            }
+            if (!empty($sec['is_linked'])) {
+                // Content lives on the template; only position and visibility
+                // are per-page for a linked block.
+                $rawVis = $vis[$sid] ?? $sec['is_visible'];
+                $isVis = $rawVis === '1' || $rawVis === 1 || $rawVis === 'on' || $rawVis === true || $rawVis === 'true';
+                Database::update('content_sections', [
+                    'sort_order' => (int) $i,
+                    'is_visible' => $isVis ? 1 : 0,
+                ], 'id = ?', [$sid]);
                 continue;
             }
             $fields = SectionRegistry::fields($sec['type']);
@@ -81,7 +186,7 @@ final class Content
         }
     }
 
-    public static function addSection(string $ownerType, int $ownerId, string $type, ?int $tplId = null): int
+    public static function addSection(string $ownerType, int $ownerId, string $type, ?int $tplId = null, bool $linked = false): int
     {
         $max = Database::one(
             'SELECT MAX(sort_order) m FROM content_sections WHERE owner_type = ? AND owner_id = ?',
@@ -103,6 +208,7 @@ final class Content
             'sort_order' => (int) ($max['m'] ?? 0) + 1,
             'is_visible' => 1,
             'section_template_id' => $tplId ?: null,
+            'is_linked' => ($linked && $tplId) ? 1 : 0,
         ]);
     }
 

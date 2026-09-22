@@ -1,27 +1,32 @@
 <?php
 /**
- * Contact details come from _start.php, but site/*.php templates render through
- * get_header() instead and never define them — which left Call / Email / Head
- * office / Hours blank (and logged "Undefined variable $phone1") on those
- * pages. Resolve them here so the section works under either header.
+ * Contact details come from Settings::contact(), which works under either
+ * header (_start.php or get_header()), treats empty settings as missing, and
+ * only returns head office / hours when they have a value — so a row is
+ * hidden rather than printed as a bare label.
  */
-$s = $s ?? ($settings ?? (class_exists('Settings') ? Settings::all() : []));
-$phone1 = $phone1 ?? ($s['phone_primary'] ?? '+91 89298 28498');
-$phone1tel = $phone1tel ?? preg_replace('/\D+/', '', (string) $phone1);
-$phone2 = $phone2 ?? ($s['phone_secondary'] ?? '+91 92569 25643');
-$phone2tel = $phone2tel ?? preg_replace('/\D+/', '', (string) $phone2);
+$ct = Settings::contact();
 ?>
 <section class="section" id="enquire">
   <div class="container enquire-grid">
     <div>
       <?php if (!empty($c['kicker'])): ?><span class="pill"><?= Html::e($c['kicker']) ?></span><?php endif; ?>
       <h2><?= Html::e($c['heading'] ?? 'Shape your future with VR Doctors') ?></h2>
-      <p class="lede"><?= Html::e($c['lede'] ?? '') ?></p>
+      <?php if (!empty($c['lede'])): ?><p class="lede"><?= Html::e($c['lede']) ?></p><?php endif; ?>
       <div class="contact-list">
-        <p><strong>Call</strong> <a href="tel:+<?= Html::e($phone1tel) ?>"><?= Html::e($phone1) ?></a><br><a href="tel:+<?= Html::e($phone2tel) ?>"><?= Html::e($phone2) ?></a></p>
-        <p><strong>Email</strong> <a href="mailto:<?= Html::e($s['email'] ?? '') ?>"><?= Html::e($s['email'] ?? '') ?></a></p>
-        <p><strong>Head office</strong> <?= Html::e($s['head_office'] ?? '') ?></p>
-        <p><strong>Hours</strong> <?= Html::e($s['hours'] ?? '') ?></p>
+        <p><strong>Call</strong>
+          <a href="tel:+<?= Html::e($ct['phone1tel']) ?>"><?= Html::e($ct['phone1']) ?></a>
+          <?php if ($ct['phone2tel'] !== $ct['phone1tel']): ?>
+            <br><a href="tel:+<?= Html::e($ct['phone2tel']) ?>"><?= Html::e($ct['phone2']) ?></a>
+          <?php endif; ?>
+        </p>
+        <p><strong>Email</strong> <a href="mailto:<?= Html::e($ct['email']) ?>"><?= Html::e($ct['email']) ?></a></p>
+        <?php if ($ct['head_office'] !== ''): ?>
+          <p><strong>Head office</strong> <?= Html::e($ct['head_office']) ?></p>
+        <?php endif; ?>
+        <?php if ($ct['hours'] !== ''): ?>
+          <p><strong>Hours</strong> <?= Html::e($ct['hours']) ?></p>
+        <?php endif; ?>
       </div>
     </div>
     <div class="enquire-card" id="contact">

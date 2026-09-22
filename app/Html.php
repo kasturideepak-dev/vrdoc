@@ -28,7 +28,9 @@ final class Html
 
     public static function allowedHtml(string $html): string
     {
-        $allowed = '<p><br><h2><h3><h4><ul><ol><li><strong><em><b><i><a><blockquote><img><table><thead><tbody><tr><th><td><hr><span><div><iframe>';
+        // Everything the admin editor can produce must be listed here, or it is
+        // silently stripped on save (underline and strikethrough used to be).
+        $allowed = '<p><br><h2><h3><h4><ul><ol><li><strong><em><b><i><u><s><sub><sup><a><blockquote><pre><code><img><table><thead><tbody><tr><th><td><hr><span><div><iframe>';
         $clean = strip_tags($html, $allowed);
         $clean = preg_replace('/\son\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $clean) ?? $clean;
         $clean = preg_replace('/javascript\s*:/i', '', $clean) ?? $clean;

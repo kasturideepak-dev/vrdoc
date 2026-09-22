@@ -18,6 +18,7 @@ final class Fields
             'url' => 'URL',
             'email' => 'Email',
             'repeater' => 'Repeater',
+            'relation' => 'Relationship (link to other entries)',
         ];
     }
 

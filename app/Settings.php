@@ -46,6 +46,39 @@ final class Settings
         self::$all = null;
     }
 
+    /**
+     * Contact details for the public site, in one place.
+     *
+     * Templates used `$s['phone_primary'] ?? '…'`, which only catches a MISSING
+     * key — an empty setting slipped through and left "Call" with nothing under
+     * it. The fallbacks were also stale numbers that no longer belong to the
+     * academy. Here empty counts as missing, and phone/WhatsApp/email fall back
+     * to the real details; head office and hours are left empty so templates
+     * can hide the row instead of printing a bare label.
+     *
+     * @return array{phone1:string,phone1tel:string,phone2:string,phone2tel:string,whatsapp:string,email:string,head_office:string,hours:string}
+     */
+    public static function contact(): array
+    {
+        $all = self::all();
+        $get = static function (string $k, string $fallback = '') use ($all): string {
+            $v = trim((string) ($all[$k] ?? ''));
+            return $v !== '' ? $v : $fallback;
+        };
+        $phone1 = $get('phone_primary', '+91 9256 9256 40');
+        $phone2 = $get('phone_secondary', '+91 9256 9256 41');
+        return [
+            'phone1' => $phone1,
+            'phone1tel' => preg_replace('/\D+/', '', $phone1) ?: '919256925640',
+            'phone2' => $phone2,
+            'phone2tel' => preg_replace('/\D+/', '', $phone2) ?: '919256925641',
+            'whatsapp' => preg_replace('/\D+/', '', $get('whatsapp', '919256925640')) ?: '919256925640',
+            'email' => $get('email', 'admissions@vrdoctors.in'),
+            'head_office' => $get('head_office'),
+            'hours' => $get('hours'),
+        ];
+    }
+
     public static function brandLogoPath(): string
     {
         return '/assets/img/brand/logo.webp';

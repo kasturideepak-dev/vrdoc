@@ -57,6 +57,21 @@ h1, h2, h3, h4, h5 {
 h1 { font-size: var(--fs-5); }
 h2 { font-size: var(--fs-4); }
 h3 { font-size: var(--fs-2); font-weight: 700; letter-spacing: -0.02em; }
+
+/* The site/ templates load Tailwind's Play CDN, whose runtime reset lands
+   after every stylesheet and sets h1–h6 to font-size/weight: inherit — which
+   flattened every section heading on those pages to 16px body text. `main hN`
+   (0,0,2) outranks that reset (0,0,1) yet still loses to any component's own
+   class rule, so deliberately styled headings keep their look. */
+main h1, main h2, main h3, main h4, main h5 {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.18;
+}
+main h1 { font-size: var(--fs-5); }
+main h2 { font-size: var(--fs-4); }
+main h3 { font-size: var(--fs-2); letter-spacing: -0.02em; }
 p { margin: 0; }
 
 .container {

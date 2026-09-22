@@ -109,6 +109,10 @@ final class SectionRegistry
                 ['k' => 'video_url', 'l' => 'Film URL', 't' => 'text'],
             ]],
             'faq' => ['label' => 'FAQ', 'fields' => [
+                ['k' => '_variant', 'l' => 'Design', 't' => 'select', 'opts' => [
+                    'soft' => 'Soft grey background — cards',
+                    'plain' => 'White background — divider lines',
+                ]],
                 ['k' => 'kicker', 'l' => 'Eyebrow', 't' => 'text'],
                 ['k' => 'heading', 'l' => 'Heading', 't' => 'text'],
                 ['k' => 'items', 'l' => 'Questions (question|answer per line)', 't' => 'textarea'],
@@ -220,6 +224,29 @@ final class SectionRegistry
                 ['k' => 'lede', 'l' => 'Description', 't' => 'textarea'],
                 ['k' => 'videos', 'l' => 'Videos (title|YouTube URL or ID, one per line — up to 8 unique)', 't' => 'textarea'],
             ]],
+            'video_testimonials' => ['label' => 'Video testimonials', 'fields' => [
+                ['k' => '_variant', 'l' => 'Design', 't' => 'select', 'opts' => [
+                    'grid' => 'Grid — three across',
+                    'carousel' => 'Carousel — swipe row',
+                    'spotlight' => 'Spotlight — one large, rest as thumbs',
+                ]],
+                ['k' => 'kicker', 'l' => 'Eyebrow', 't' => 'text'],
+                ['k' => 'heading', 'l' => 'Heading', 't' => 'text'],
+                ['k' => 'lede', 'l' => 'Description', 't' => 'textarea'],
+                ['k' => 'items', 'l' => 'Testimonials (Name|Role|YouTube URL|Quote, one per line)', 't' => 'textarea'],
+            ]],
+            'branches' => ['label' => 'Branches', 'fields' => [
+                ['k' => '_variant', 'l' => 'Design', 't' => 'select', 'opts' => [
+                    'cards' => 'Cards — photo grid',
+                    'list' => 'List — compact rows',
+                    'split' => 'Split — highlight and list',
+                ]],
+                ['k' => 'kicker', 'l' => 'Eyebrow', 't' => 'text'],
+                ['k' => 'heading', 'l' => 'Heading', 't' => 'text'],
+                ['k' => 'note', 'l' => 'Note', 't' => 'textarea'],
+                ['k' => 'source', 'l' => 'Pull from post type (slug — blank uses “campuses”)', 't' => 'text'],
+                ['k' => 'items', 'l' => 'Or list manually (Name|Address|Phone|Image, one per line)', 't' => 'textarea'],
+            ]],
             'html' => ['label' => 'Custom HTML', 'fields' => [
                 ['k' => 'html', 'l' => 'HTML', 't' => 'html'],
             ]],
@@ -260,6 +287,8 @@ final class SectionRegistry
             'blog' => 'B',
             'about', 'split', 'rich_text' => 'T',
             'post_body' => '▤',
+            'video_testimonials' => '▶',
+            'branches' => '⌖',
             'programs', 'features', 'careers' => '⊞',
             'campuses' => '⌖',
             default => strtoupper(substr($type, 0, 1)),
@@ -269,6 +298,7 @@ final class SectionRegistry
     public static function groupLabel(string $g): string
     {
         return match ($g) {
+            'design' => 'Design',
             'text' => 'Text content',
             'media' => 'Media',
             'cta' => 'Call to action',
@@ -276,8 +306,33 @@ final class SectionRegistry
         };
     }
 
+    /** Design variants a section offers, keyed by stored value. */
+    public static function variants(string $type): array
+    {
+        foreach (self::fields($type) as $f) {
+            if (($f['k'] ?? '') === '_variant') {
+                return $f['opts'] ?? [];
+            }
+        }
+        return [];
+    }
+
+    /** The variant to render, falling back to the first one defined. */
+    public static function variant(string $type, array $content): string
+    {
+        $opts = self::variants($type);
+        if (!$opts) {
+            return '';
+        }
+        $v = (string) ($content['_variant'] ?? '');
+        return isset($opts[$v]) ? $v : (string) array_key_first($opts);
+    }
+
     public static function fieldGroup(array $f): string
     {
+        if (($f['k'] ?? '') === '_variant') {
+            return 'design';
+        }
         if (($f['t'] ?? '') === 'image' || in_array($f['k'] ?? '', ['image', 'figure', 'image_main', 'image_card', 'video_image', 'bg', 'shot1', 'shot2', 'shot3', 'images', 'og_image'], true)) {
             return 'media';
         }
@@ -294,7 +349,7 @@ final class SectionRegistry
 
     public static function groupedFields(string $type): array
     {
-        $out = ['text' => [], 'media' => [], 'cta' => [], 'more' => []];
+        $out = ['design' => [], 'text' => [], 'media' => [], 'cta' => [], 'more' => []];
         foreach (self::fields($type) as $f) {
             $out[self::fieldGroup($f)][] = $f;
         }

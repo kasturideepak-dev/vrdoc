@@ -125,6 +125,7 @@ $proto .= '</select><select name="field_required[]"><option value="0">Optional</
     <button class="btn" type="submit">Save post type</button>
     <?php if ($row): ?>
       <a class="btn-ghost" href="/admin/content/<?= Html::e($row['slug']) ?>/new/">Add first entry</a>
+      <a class="btn-ghost" href="/admin/post-types/<?= (int) $row['id'] ?>/taxonomies/">Taxonomies</a>
       <?php if (!Cpt::isSystem($row) && Auth::can('post_types.delete')): ?>
         <a class="btn-danger" href="/admin/post-types/<?= (int) $row['id'] ?>/confirm-delete/">Delete</a>
       <?php endif; ?>

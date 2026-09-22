@@ -5,7 +5,7 @@
 $asset = $asset ?? '/assets/';
 $GLOBALS['vr_extra_stylesheets'] = [
     $asset . 'css/tokens.css',
-    $asset . 'css/pages.css?v=blog-5',
+    site_asset($asset, 'css/pages.css'),
 ];
 $cat = $cat ?? null;
 $pageNum = $pageNum ?? 1;
