@@ -48,7 +48,7 @@ if (empty($categories)) {
 						<?php foreach ($cat['photos'] as $photo) : ?>
 							<?php if (empty($photo['src'])) { continue; } ?>
 							<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-800 to-blue-600 aspect-square transition-transform duration-300 ease-out hover:scale-125 hover:z-20 hover:shadow-2xl">
-								<img src="<?php echo esc_url(vr_media_url($photo['src'])); ?>" alt="<?php echo esc_attr($photo['alt'] ?? ''); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" loading="lazy" />
+								<img src="<?php echo esc_url(vr_media_url($photo['src'])); ?>" alt="<?php echo esc_attr($photo['alt'] ?? ''); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" loading="lazy"<?php $__ss = vr_srcset($photo['src']); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 50vw, 25vw"<?php endif; ?> />
 							</div>
 						<?php endforeach; ?>
 					</div>

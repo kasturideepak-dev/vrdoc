@@ -56,7 +56,7 @@ if (empty($items) || !is_array($items)) {
 				<div class="bg-white rounded-3xl shadow-lg border border-gray-200 p-6 h-full flex flex-col" data-testimonial-card>
 					<div class="flex justify-between items-start">
 						<?php if (!empty($item['image'])) : ?>
-							<img src="<?php echo esc_url(vr_media_url($item['image'])); ?>" alt="<?php echo esc_attr($item['title'] ?? ''); ?>" width="96" height="96" class="rounded-full object-cover border-[3px] border-orange-500 shadow-md w-24 h-24" decoding="async" loading="lazy" />
+							<img src="<?php echo esc_url(vr_media_url($item['image'])); ?>" alt="<?php echo esc_attr($item['title'] ?? ''); ?>" width="96" height="96" class="rounded-full object-cover border-[3px] border-orange-500 shadow-md w-24 h-24" decoding="async" loading="lazy"<?php $__ss = vr_srcset($item['image']); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 100vw, 50vw"<?php endif; ?> />
 						<?php endif; ?>
 						<?php if (!empty($meta['rank_badge'])) : ?>
 							<span class="bg-orange-500 text-white text-xs font-semibold px-3 py-2 rounded-full">

@@ -28,7 +28,7 @@ $vrExt = static function (array $i) use ($vrHost): string {
 <nav class="vr-navbar sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/50" data-vr-nav>
 	<div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
 		<a href="<?php echo esc_url(home_url('/')); ?>" class="flex items-center group shrink-0" aria-label="VR Doctors Academy — Home">
-			<img src="<?php echo esc_url(vr_media_url(class_exists('Settings') ? Settings::logoUrl() : vr_img('logo.webp'))); ?>" alt="VR Doctors Academy" width="200" height="102" class="h-11 md:h-14 w-auto object-contain group-hover:opacity-90 transition-opacity" decoding="async" />
+			<img src="<?php echo esc_url(vr_media_url(class_exists('Settings') ? Settings::logoUrl() : vr_img('logo.webp'))); ?>" alt="VR Doctors Academy" width="200" height="102" class="h-11 md:h-14 w-auto object-contain group-hover:opacity-90 transition-opacity" decoding="async"<?php $__ss = vr_srcset(class_exists('Settings') ? Settings::logoUrl() : vr_img('logo.webp')); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 100vw, 50vw"<?php endif; ?> />
 		</a>
 
 		<div class="hidden lg:flex gap-1 items-center" data-desktop-nav>

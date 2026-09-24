@@ -21,7 +21,7 @@ $loop     = array_merge($items, $items);
 				<div class="w-64 shrink-0 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
 					<div class="flex items-center gap-3">
 						<?php if (!empty($item['image'])) : ?>
-							<img src="<?php echo esc_url(vr_media_url($item['image'])); ?>" alt="<?php echo esc_attr($item['title']); ?>" class="w-[60px] h-[60px] rounded-full object-cover" width="60" height="60" decoding="async" loading="lazy" />
+							<img src="<?php echo esc_url(vr_media_url($item['image'])); ?>" alt="<?php echo esc_attr($item['title']); ?>" class="w-[60px] h-[60px] rounded-full object-cover" width="60" height="60" decoding="async" loading="lazy"<?php $__ss = vr_srcset($item['image']); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 100vw, 50vw"<?php endif; ?> />
 						<?php endif; ?>
 						<div>
 							<p class="font-bold text-blue-900 text-sm"><?php echo esc_html($item['title']); ?></p>

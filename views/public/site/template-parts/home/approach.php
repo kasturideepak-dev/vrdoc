@@ -46,7 +46,7 @@ if (empty($steps)) {
 				<div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
 					<div class="relative h-[220px] md:h-[380px] rounded-3xl overflow-hidden shadow-lg">
 						<?php if (!empty($step['image'])) : ?>
-							<img src="<?php echo esc_url(vr_media_url($step['image'])); ?>" alt="<?php echo esc_attr($step['heading'] ?? $step['title'] ?? ''); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" loading="lazy" />
+							<img src="<?php echo esc_url(vr_media_url($step['image'])); ?>" alt="<?php echo esc_attr($step['heading'] ?? $step['title'] ?? ''); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" loading="lazy"<?php $__ss = vr_srcset($step['image']); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 100vw, 50vw"<?php endif; ?> />
 						<?php else : ?>
 							<div class="absolute inset-0 bg-blue-900"></div>
 						<?php endif; ?>

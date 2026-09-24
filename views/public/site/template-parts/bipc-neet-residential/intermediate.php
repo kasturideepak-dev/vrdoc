@@ -20,7 +20,7 @@ if (empty($highlights) && trim((string) ($s['title'] ?? '')) === '') {
 				<img
 					src="<?php echo esc_url(vr_media_url($s['image'])); ?>"
 					alt="<?php echo esc_attr($s['image_alt']); ?>"
-					class="w-full rounded-2xl shadow-lg object-cover aspect-[4/3]" decoding="async" loading="lazy" />
+					class="w-full rounded-2xl shadow-lg object-cover aspect-[4/3]" decoding="async" loading="lazy"<?php $__ss = vr_srcset($s['image']); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 100vw, 50vw"<?php endif; ?> />
 			</div>
 			<?php endif; ?>
 			<div>

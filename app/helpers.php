@@ -54,6 +54,44 @@ function asset_version(string $file): string
 }
 
 /**
+ * srcset for a local image, using the "-480w/-768w/-1200w" variants written
+ * next to it (see build/README.md). Phones were downloading 1920px-wide hero
+ * images — 209 KB for a 390px screen, which was the largest single cost on
+ * mobile. Returns '' when no variants exist, so callers can omit the attribute.
+ */
+function vr_srcset(string $url): string
+{
+    if ($url === '' || !str_starts_with($url, '/assets/')) {
+        return '';
+    }
+    $path = rawurldecode(explode('?', $url)[0]);
+    $file = ROOT . $path;
+    if (!is_file($file)) {
+        return '';
+    }
+    $dot = strrpos($path, '.');
+    if ($dot === false) {
+        return '';
+    }
+    [$stem, $ext] = [substr($path, 0, $dot), substr($path, $dot)];
+    $out = [];
+    foreach ([480, 768, 1200] as $w) {
+        $variant = $stem . '-' . $w . 'w' . $ext;
+        if (is_file(ROOT . $variant)) {
+            $out[] = vr_media_url($variant) . ' ' . $w . 'w';
+        }
+    }
+    if (!$out) {
+        return '';
+    }
+    $size = @getimagesize($file);
+    if ($size) {
+        $out[] = vr_media_url($path) . ' ' . (int) $size[0] . 'w';
+    }
+    return implode(', ', $out);
+}
+
+/**
  * Trim a value to fit its database column (titles and SEO fields are
  * VARCHAR(190)). Without this, pasting a very long title returned a raw
  * 500: "Data too long for column 'title'".

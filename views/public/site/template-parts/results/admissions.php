@@ -24,7 +24,7 @@ for ($i = 1; $i <= 6; $i++) {
 		<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
 			<?php foreach ($images as $i => $url) : ?>
 				<button type="button" class="block w-full overflow-hidden rounded-2xl shadow hover:shadow-xl transition p-0 border-0 cursor-pointer" data-lightbox-src="<?php echo esc_url($url); ?>">
-					<img src="<?php echo esc_url(vr_media_url($url)); ?>" alt="<?php echo esc_attr(sprintf(/* translators: image number */ __('Medical Admission %d', 'vr-doctors'), $i + 1)); ?>" class="w-full h-auto object-cover pointer-events-none" decoding="async" loading="lazy" />
+					<img src="<?php echo esc_url(vr_media_url($url)); ?>" alt="<?php echo esc_attr(sprintf(/* translators: image number */ __('Medical Admission %d', 'vr-doctors'), $i + 1)); ?>" class="w-full h-auto object-cover pointer-events-none" decoding="async" loading="lazy"<?php $__ss = vr_srcset($url); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 100vw, 50vw"<?php endif; ?> />
 				</button>
 			<?php endforeach; ?>
 		</div>

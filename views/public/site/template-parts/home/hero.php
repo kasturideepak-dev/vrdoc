@@ -35,7 +35,7 @@ $first = $slides[0];
 			aria-hidden="<?php echo 0 === (int) $i ? 'false' : 'true'; ?>"
 		>
 			<?php if ($slide_img !== '') : ?>
-				<img src="<?php echo esc_url(vr_media_url($slide_img)); ?>" alt="<?php echo esc_attr($slide_title); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" <?php echo 0 === (int) $i ? 'fetchpriority="high"' : 'loading="lazy"'; ?> />
+				<img src="<?php echo esc_url(vr_media_url($slide_img)); ?>" alt="<?php echo esc_attr($slide_title); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" <?php echo 0 === (int) $i ? 'fetchpriority="high"' : 'loading="lazy"'; ?><?php $__ss = vr_srcset($slide_img); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="100vw"<?php endif; ?> />
 			<?php else : ?>
 				<div class="absolute inset-0 bg-blue-950"></div>
 			<?php endif; ?>

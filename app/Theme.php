@@ -92,8 +92,12 @@ final class Theme
             $slides = vr_get_home_hero()['slides'] ?? [];
             $firstImage = (string) ($slides[0]['image'] ?? '');
             if ($firstImage !== '') {
-                // Same URL the <img> will request (versioned), or it downloads twice.
-                echo '<link rel="preload" as="image" fetchpriority="high" href="' . $e(vr_media_url($firstImage)) . '">' . "\n";
+                // Must offer the same candidates as the <img>, or the browser
+                // preloads one file and then downloads a different one.
+                $srcset = function_exists('vr_srcset') ? vr_srcset($firstImage) : '';
+                echo '<link rel="preload" as="image" fetchpriority="high" href="' . $e(vr_media_url($firstImage)) . '"'
+                    . ($srcset !== '' ? ' imagesrcset="' . $e($srcset) . '" imagesizes="100vw"' : '')
+                    . '>' . "\n";
             }
         }
         // Fonts and icons load without blocking the first paint: the browser

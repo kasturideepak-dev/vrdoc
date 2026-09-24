@@ -11,7 +11,7 @@ $features = !empty($s['features']) && is_array($s['features']) ? $s['features'] 
 <section id="shortterm" class="py-12 md:py-16 bg-white scroll-mt-24">
 	<div class="max-w-6xl mx-auto px-4 md:px-6 grid md:grid-cols-2 gap-10 items-center">
 		<div class="order-2 md:order-1">
-			<img src="<?php echo esc_url(vr_media_url($s['image'])); ?>" alt="<?php echo esc_attr($s['image_alt']); ?>" class="w-full rounded-3xl object-cover shadow-lg" decoding="async" loading="lazy" />
+			<img src="<?php echo esc_url(vr_media_url($s['image'])); ?>" alt="<?php echo esc_attr($s['image_alt']); ?>" class="w-full rounded-3xl object-cover shadow-lg" decoding="async" loading="lazy"<?php $__ss = vr_srcset($s['image']); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 100vw, 50vw"<?php endif; ?> />
 		</div>
 		<div class="order-1 md:order-2">
 			<p class="text-orange-500 font-semibold uppercase tracking-widest"><?php echo esc_html($s['eyebrow']); ?></p>

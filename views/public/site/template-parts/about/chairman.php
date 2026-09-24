@@ -10,7 +10,7 @@ $s = vr_get_page_section('about', 'chairman');
 <section class="py-12 md:py-16 bg-white">
 	<div class="max-w-6xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
 		<div>
-			<img src="<?php echo esc_url(vr_media_url($s['image'])); ?>" alt="<?php echo esc_attr($s['image_alt']); ?>" class="w-full rounded-3xl object-cover shadow-lg" decoding="async" loading="lazy" />
+			<img src="<?php echo esc_url(vr_media_url($s['image'])); ?>" alt="<?php echo esc_attr($s['image_alt']); ?>" class="w-full rounded-3xl object-cover shadow-lg" decoding="async" loading="lazy"<?php $__ss = vr_srcset($s['image']); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="(max-width: 768px) 100vw, 50vw"<?php endif; ?> />
 		</div>
 		<div>
 			<p class="text-orange-500 font-semibold uppercase tracking-widest"><?php echo esc_html($s['eyebrow']); ?></p>

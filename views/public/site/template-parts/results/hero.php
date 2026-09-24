@@ -8,7 +8,7 @@
 $hero = vr_get_page_section('results', 'hero');
 ?>
 <section class="relative py-12 md:py-20 overflow-hidden">
-	<img src="<?php echo esc_url(vr_media_url($hero['image'])); ?>" alt="<?php echo esc_attr($hero['image_alt']); ?>" class="absolute inset-0 w-full h-full object-cover -z-10" decoding="async" fetchpriority="high" />
+	<img src="<?php echo esc_url(vr_media_url($hero['image'])); ?>" alt="<?php echo esc_attr($hero['image_alt']); ?>" class="absolute inset-0 w-full h-full object-cover -z-10" decoding="async" fetchpriority="high"<?php $__ss = vr_srcset($hero['image']); if ($__ss !== '') : ?> srcset="<?php echo esc_attr($__ss); ?>" sizes="100vw"<?php endif; ?> />
 	<div class="absolute inset-0 bg-black/60 -z-10"></div>
 	<div class="max-w-5xl mx-auto px-5 text-center relative z-10">
 		<p class="text-orange-400 font-semibold uppercase tracking-widest"><?php echo esc_html($hero['eyebrow']); ?></p>
