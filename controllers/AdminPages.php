@@ -42,7 +42,7 @@ final class AdminPages
     public static function create(): void
     {
         Auth::requirePerm('pages.create');
-        $title = Request::str('title');
+        $title = fit_col(Request::str('title'));
         $slugIn = Request::str('slug') ?: $title;
         if (Slug::isReserved($slugIn) || Slug::firstSegmentTaken($slugIn)) {
             $msg = 'That slug is reserved or collides with an existing route.';
@@ -136,7 +136,7 @@ final class AdminPages
         }
         $scheduled = Request::str('scheduled_at') ?: null;
         Database::update('pages', [
-            'title' => Request::str('title'),
+            'title' => fit_col(Request::str('title')),
             'slug' => $slug,
             'type' => Request::str('type') ?: $page['type'],
             'status' => $status,

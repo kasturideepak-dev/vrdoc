@@ -3,12 +3,27 @@ declare(strict_types=1);
 
 final class Slug
 {
-    public static function make(string $text): string
+    /**
+     * Slug columns are VARCHAR(190) at their widest (80 for post types and
+     * taxonomies), so slugs are capped on a word boundary: a long title used
+     * to produce a 479-character slug and saving died with "Data too long".
+     * $max leaves room for the "-2" suffix uniqueness may append.
+     */
+    public static function make(string $text, int $max = 150): string
     {
         $s = strtolower(trim($text));
+        // Strip accents first; //TRANSLIT alone turns "é" into "'e" on macOS.
+        if (function_exists('transliterator_transliterate')) {
+            $s = transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $s) ?: $s;
+        }
         $s = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s) ?: $s;
         $s = preg_replace('/[^a-z0-9]+/i', '-', $s) ?? '';
         $s = trim($s, '-');
+        if ($max > 0 && strlen($s) > $max) {
+            $cut = substr($s, 0, $max);
+            $lastDash = strrpos($cut, '-');
+            $s = trim($lastDash !== false && $lastDash > (int) ($max * 0.6) ? substr($cut, 0, $lastDash) : $cut, '-');
+        }
         return $s !== '' ? $s : 'item';
     }
 
@@ -147,7 +162,7 @@ final class Slug
 
     public static function uniquePostType(string $slug, ?int $ignoreId = null): string
     {
-        $base = self::make($slug);
+        $base = self::make($slug, 60);
         $try = $base;
         $i = 2;
         while (true) {

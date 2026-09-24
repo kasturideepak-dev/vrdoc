@@ -54,6 +54,16 @@ function asset_version(string $file): string
 }
 
 /**
+ * Trim a value to fit its database column (titles and SEO fields are
+ * VARCHAR(190)). Without this, pasting a very long title returned a raw
+ * 500: "Data too long for column 'title'".
+ */
+function fit_col(string $value, int $max = 190): string
+{
+    return mb_strlen($value) > $max ? rtrim(mb_substr($value, 0, $max)) : $value;
+}
+
+/**
  * Cache-busting URL for any local asset path (images included).
  *
  * Hostinger's CDN caches by URL and ignores our Cache-Control, so a replaced

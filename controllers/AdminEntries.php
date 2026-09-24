@@ -83,7 +83,7 @@ final class AdminEntries
         $fieldDefs = Cpt::fields((int) $type['id']);
         $values = Cpt::saveFieldsFromRequest($fieldDefs);
         $errors = Cpt::validateRequired($fieldDefs, $values);
-        $title = Request::str('title');
+        $title = fit_col(Request::str('title'));
         if ($title === '') {
             $errors[] = 'Title is required.';
         }

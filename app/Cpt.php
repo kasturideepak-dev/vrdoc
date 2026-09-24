@@ -293,8 +293,12 @@ final class Cpt
                 ['Miyapur (B)', 'miyapur-b', 'Miyapur, Hyderabad, Telangana', '/assets/img/campus/miyapur-b.jpg'],
             ];
             foreach ($campuses as $i => $c) {
+                // Counts trashed rows: they still hold the slug under
+                // uq_cpt_type_slug, so skipping them retried the same insert on
+                // every request — and re-creating a campus the client deleted
+                // is wrong anyway. Same bug as Blog::ensurePosts() had.
                 $row = Database::one(
-                    'SELECT * FROM cpt_entries WHERE post_type_id = ? AND slug = ? AND deleted_at IS NULL',
+                    'SELECT * FROM cpt_entries WHERE post_type_id = ? AND slug = ?',
                     [$typeId, $c[1]]
                 );
                 if (!$row) {

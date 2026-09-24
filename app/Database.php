@@ -96,6 +96,13 @@ final class Database
 
     public static function upsertSeo(string $type, int $id, array $data): void
     {
+        // These columns are VARCHAR(190); generated values ("<title> | VR
+        // Doctors Blog") can overflow and would otherwise throw on save.
+        foreach (['seo_title', 'og_title', 'twitter_title', 'canonical_url', 'og_image', 'twitter_image'] as $col) {
+            if (isset($data[$col]) && is_string($data[$col])) {
+                $data[$col] = fit_col($data[$col]);
+            }
+        }
         $exists = self::one('SELECT id FROM seo_metadata WHERE entity_type = ? AND entity_id = ?', [$type, $id]);
         if ($exists) {
             self::update('seo_metadata', $data, 'entity_type = ? AND entity_id = ?', [$type, $id]);

@@ -71,7 +71,7 @@ final class AdminBlog
             View::flash('error', 'Cannot save a trashed post. Restore it first.');
             View::redirect('/admin/blog/?trash=1');
         }
-        $title = trim(Request::str('title'));
+        $title = fit_col(trim(Request::str('title')));
         if ($title === '') {
             View::flash('error', 'Title is required.');
             View::redirect($id ? '/admin/blog/' . $id . '/' : '/admin/blog/new/');
