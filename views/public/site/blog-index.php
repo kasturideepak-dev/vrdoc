@@ -59,7 +59,7 @@ get_header();
           ?>
             <a href="<?php echo esc_url($href); ?>" class="group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg hover:border-orange-200 transition-all duration-300 flex flex-col">
               <div class="aspect-[16/10] overflow-hidden bg-gray-100">
-                <img src="<?php echo esc_url($img); ?>" alt="<?php echo esc_attr($p['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                <img src="<?php echo esc_url(vr_media_url($img)); ?>" alt="<?php echo esc_attr($p['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async">
               </div>
               <div class="p-6 flex flex-col flex-1">
                 <?php if (!empty($p['published_at'])): ?>

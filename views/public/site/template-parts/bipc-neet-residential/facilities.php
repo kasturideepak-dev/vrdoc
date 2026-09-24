@@ -43,20 +43,17 @@ $items = vr_neet_facility_items($s);
 
 			<div class="grid grid-cols-2 gap-3 md:gap-4">
 				<img
-					src="<?php echo esc_url($s['image_1']); ?>"
+					src="<?php echo esc_url(vr_media_url($s['image_1'])); ?>"
 					alt="<?php echo esc_attr($s['image_1_alt'] ?: 'Residential campus facilities at VR Doctors Academy'); ?>"
-					class="w-full h-full min-h-[180px] md:min-h-[240px] rounded-2xl object-cover shadow-md col-span-1 row-span-2"
-				/>
+					class="w-full h-full min-h-[180px] md:min-h-[240px] rounded-2xl object-cover shadow-md col-span-1 row-span-2" decoding="async" loading="lazy" />
 				<img
-					src="<?php echo esc_url($s['image_2']); ?>"
+					src="<?php echo esc_url(vr_media_url($s['image_2'])); ?>"
 					alt="<?php echo esc_attr($s['image_2_alt'] ?: 'Hostel facilities at VR Doctors Academy'); ?>"
-					class="w-full h-full min-h-[120px] md:min-h-[160px] rounded-2xl object-cover shadow-md"
-				/>
+					class="w-full h-full min-h-[120px] md:min-h-[160px] rounded-2xl object-cover shadow-md" decoding="async" loading="lazy" />
 				<img
-					src="<?php echo esc_url($s['image_3']); ?>"
+					src="<?php echo esc_url(vr_media_url($s['image_3'])); ?>"
 					alt="<?php echo esc_attr($s['image_3_alt'] ?: 'Air-conditioned classrooms and hostel rooms'); ?>"
-					class="w-full h-full min-h-[120px] md:min-h-[160px] rounded-2xl object-cover shadow-md"
-				/>
+					class="w-full h-full min-h-[120px] md:min-h-[160px] rounded-2xl object-cover shadow-md" decoding="async" loading="lazy" />
 			</div>
 		</div>
 	</div>

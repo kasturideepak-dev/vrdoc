@@ -18,10 +18,9 @@ if (empty($highlights) && trim((string) ($s['title'] ?? '')) === '') {
 			<?php if (!empty($s['image'])) : ?>
 			<div>
 				<img
-					src="<?php echo esc_url($s['image']); ?>"
+					src="<?php echo esc_url(vr_media_url($s['image'])); ?>"
 					alt="<?php echo esc_attr($s['image_alt']); ?>"
-					class="w-full rounded-2xl shadow-lg object-cover aspect-[4/3]"
-				/>
+					class="w-full rounded-2xl shadow-lg object-cover aspect-[4/3]" decoding="async" loading="lazy" />
 			</div>
 			<?php endif; ?>
 			<div>

@@ -21,7 +21,7 @@ $s = vr_get_page_section('bipc-careers', 'what_is');
 				</p>
 			</div>
 			<div>
-				<img src="<?php echo esc_url($s['image']); ?>" alt="<?php echo esc_attr($s['image_alt']); ?>" class="w-full rounded-3xl shadow-xl object-cover" />
+				<img src="<?php echo esc_url(vr_media_url($s['image'])); ?>" alt="<?php echo esc_attr($s['image_alt']); ?>" class="w-full rounded-3xl shadow-xl object-cover" decoding="async" loading="lazy" />
 			</div>
 		</div>
 	</div>

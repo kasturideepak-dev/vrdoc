@@ -11,10 +11,9 @@ $email = !empty($hero['email']) ? $hero['email'] : 'info@vrdoctorsacademy.com';
 ?>
 <section class="relative overflow-hidden py-12 md:py-16 lg:py-20">
 	<img
-		src="<?php echo esc_url($hero['image']); ?>"
+		src="<?php echo esc_url(vr_media_url($hero['image'])); ?>"
 		alt="<?php echo esc_attr($hero['image_alt']); ?>"
-		class="absolute inset-0 w-full h-full object-cover -z-10"
-	/>
+		class="absolute inset-0 w-full h-full object-cover -z-10" decoding="async" fetchpriority="high" />
 	<div class="absolute inset-0 bg-blue-950/85 -z-10"></div>
 	<div class="absolute inset-0 bg-gradient-to-br from-blue-950/60 via-transparent to-orange-900/25 -z-10"></div>
 

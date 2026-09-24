@@ -16,10 +16,11 @@ $steps = !empty($s['items']) && is_array($s['items']) ? $s['items'] : array();
 			<p class="mt-4 text-gray-600"><?php echo esc_html($s['description']); ?></p>
 		</div>
 
-		<div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+		<div role="tablist" class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
 			<?php foreach ($steps as $i => $step) : ?>
 				<button
 					type="button"
+					role="tab"
 					data-tab-btn
 					data-active-class="bg-blue-900 text-white"
 					data-inactive-class="bg-white text-blue-900"
@@ -32,7 +33,7 @@ $steps = !empty($s['items']) && is_array($s['items']) ? $s['items'] : array();
 		</div>
 
 		<?php foreach ($steps as $i => $step) : ?>
-			<div data-tab-panel class="bg-white rounded-2xl p-8 shadow border border-gray-100 <?php echo 0 === $i ? '' : 'hidden'; ?>">
+			<div data-tab-panel role="tabpanel" class="bg-white rounded-2xl p-8 shadow border border-gray-100 <?php echo 0 === $i ? '' : 'hidden'; ?>">
 				<div class="flex items-start gap-4">
 					<div class="w-14 h-14 rounded-full bg-orange-500 text-white flex items-center justify-center text-xl shrink-0">
 						<i class="fa-solid <?php echo esc_attr($step['icon'] ?? 'fa-circle'); ?>"></i>

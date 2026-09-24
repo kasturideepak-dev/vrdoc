@@ -69,7 +69,7 @@ if (empty($items)) {
 			<div data-tab-panel role="tabpanel" class="<?php echo 0 === $i ? '' : 'hidden'; ?>">
 				<div class="relative rounded-3xl overflow-hidden min-h-[320px] md:min-h-[420px]">
 					<?php if ($image !== '') : ?>
-						<img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($title); ?>" class="absolute inset-0 w-full h-full object-cover" />
+						<img src="<?php echo esc_url(vr_media_url($image)); ?>" alt="<?php echo esc_attr($title); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" loading="lazy" />
 					<?php endif; ?>
 					<div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
 					<div class="absolute bottom-0 left-0 right-0 z-10 p-8 md:p-12 text-white">

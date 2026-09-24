@@ -83,6 +83,29 @@
     });
   }
 
+  /* ——— YouTube facades ——— */
+  // Each embedded player costs ~500 KB of script and dozens of requests, so
+  // show the thumbnail and only load YouTube when the visitor asks for it.
+  function initYouTubeFacades() {
+    qsa("[data-yt-facade]").forEach(function (frame) {
+      var btn = qs("button", frame);
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        var id = frame.getAttribute("data-yt-id");
+        if (!id || frame.classList.contains("is-playing")) return;
+        frame.classList.add("is-playing");
+        var iframe = document.createElement("iframe");
+        iframe.src = "https://www.youtube.com/embed/" + encodeURIComponent(id) + "?autoplay=1&rel=0&modestbranding=1";
+        iframe.title = btn.getAttribute("aria-label") || "YouTube video";
+        iframe.className = "absolute inset-0 w-full h-full";
+        iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+        iframe.setAttribute("allowfullscreen", "");
+        frame.innerHTML = "";
+        frame.appendChild(iframe);
+      });
+    });
+  }
+
   /* ——— Hero carousel ——— */
   function initHero() {
     var root = qs("[data-hero-carousel]");
@@ -454,6 +477,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     initNav();
+    initYouTubeFacades();
     initHero();
     initCounters();
     initTestimonials();

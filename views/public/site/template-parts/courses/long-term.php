@@ -26,7 +26,7 @@ $features = !empty($s['features']) && is_array($s['features']) ? $s['features'] 
 			</a>
 		</div>
 		<div>
-			<img src="<?php echo esc_url($s['image']); ?>" alt="<?php echo esc_attr($s['image_alt']); ?>" class="w-full rounded-3xl object-cover shadow-lg" />
+			<img src="<?php echo esc_url(vr_media_url($s['image'])); ?>" alt="<?php echo esc_attr($s['image_alt']); ?>" class="w-full rounded-3xl object-cover shadow-lg" decoding="async" loading="lazy" />
 		</div>
 	</div>
 </section>

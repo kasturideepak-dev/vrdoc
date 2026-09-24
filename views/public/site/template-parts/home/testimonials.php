@@ -40,7 +40,7 @@ if (empty($items) || !is_array($items)) {
 			</button>
 			<div class="flex gap-2">
 				<?php foreach ($items as $i => $item) : ?>
-					<button type="button" data-testimonial-dot class="w-3 h-3 rounded-full transition-all <?php echo 0 === (int) $i ? 'bg-orange-500 scale-125' : 'bg-gray-300'; ?>" aria-label="<?php echo esc_attr(sprintf(/* translators: testimonial number */ __('Testimonial %d', 'vr-doctors'), (int) $i + 1)); ?>"></button>
+					<button type="button" data-testimonial-dot class="w-6 h-6 p-1.5 box-border bg-clip-content rounded-full transition-all <?php echo 0 === (int) $i ? 'bg-orange-500 scale-125' : 'bg-gray-300'; ?>" aria-label="<?php echo esc_attr(sprintf(/* translators: testimonial number */ __('Testimonial %d', 'vr-doctors'), (int) $i + 1)); ?>"></button>
 				<?php endforeach; ?>
 			</div>
 			<button type="button" data-testimonial-next class="w-11 h-11 rounded-full bg-white border shadow hover:bg-orange-500 hover:text-white transition" aria-label="Next">
@@ -56,7 +56,7 @@ if (empty($items) || !is_array($items)) {
 				<div class="bg-white rounded-3xl shadow-lg border border-gray-200 p-6 h-full flex flex-col" data-testimonial-card>
 					<div class="flex justify-between items-start">
 						<?php if (!empty($item['image'])) : ?>
-							<img src="<?php echo esc_url($item['image']); ?>" alt="<?php echo esc_attr($item['title'] ?? ''); ?>" width="96" height="96" class="rounded-full object-cover border-[3px] border-orange-500 shadow-md w-24 h-24" />
+							<img src="<?php echo esc_url(vr_media_url($item['image'])); ?>" alt="<?php echo esc_attr($item['title'] ?? ''); ?>" width="96" height="96" class="rounded-full object-cover border-[3px] border-orange-500 shadow-md w-24 h-24" decoding="async" loading="lazy" />
 						<?php endif; ?>
 						<?php if (!empty($meta['rank_badge'])) : ?>
 							<span class="bg-orange-500 text-white text-xs font-semibold px-3 py-2 rounded-full">

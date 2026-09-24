@@ -35,7 +35,7 @@ $first = $slides[0];
 			aria-hidden="<?php echo 0 === (int) $i ? 'false' : 'true'; ?>"
 		>
 			<?php if ($slide_img !== '') : ?>
-				<img src="<?php echo esc_url($slide_img); ?>" alt="<?php echo esc_attr($slide_title); ?>" class="absolute inset-0 w-full h-full object-cover" />
+				<img src="<?php echo esc_url(vr_media_url($slide_img)); ?>" alt="<?php echo esc_attr($slide_title); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" <?php echo 0 === (int) $i ? 'fetchpriority="high"' : 'loading="lazy"'; ?> />
 			<?php else : ?>
 				<div class="absolute inset-0 bg-blue-950"></div>
 			<?php endif; ?>
@@ -77,7 +77,7 @@ $first = $slides[0];
 
 	<div class="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-20">
 		<?php foreach ($slides as $i => $slide) : ?>
-			<button type="button" data-hero-dot class="w-3 h-3 rounded-full transition <?php echo 0 === (int) $i ? 'bg-orange-500' : 'bg-white/50'; ?>" aria-label="<?php echo esc_attr(sprintf(/* translators: slide number */ __('Slide %d', 'vr-doctors'), (int) $i + 1)); ?>"></button>
+			<button type="button" data-hero-dot class="w-6 h-6 p-1.5 box-border bg-clip-content rounded-full transition <?php echo 0 === (int) $i ? 'bg-orange-500' : 'bg-white/50'; ?>" aria-label="<?php echo esc_attr(sprintf(/* translators: slide number */ __('Slide %d', 'vr-doctors'), (int) $i + 1)); ?>"></button>
 		<?php endforeach; ?>
 	</div>
 </section>

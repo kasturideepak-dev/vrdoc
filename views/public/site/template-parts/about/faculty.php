@@ -19,7 +19,7 @@ $items = vr_get_ordered_posts('faculty', vr_fallback_faculty());
 			<?php foreach ($items as $item) : ?>
 				<div class="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden text-center p-6">
 					<?php if (!empty($item['image'])) : ?>
-						<img src="<?php echo esc_url($item['image']); ?>" alt="<?php echo esc_attr($item['title']); ?>" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-orange-400" />
+						<img src="<?php echo esc_url(vr_media_url($item['image'])); ?>" alt="<?php echo esc_attr($item['title']); ?>" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-orange-400" decoding="async" loading="lazy" />
 					<?php endif; ?>
 					<h3 class="mt-4 text-lg font-bold text-blue-900"><?php echo esc_html($item['title']); ?></h3>
 					<p class="text-orange-500 font-semibold text-sm mt-1"><?php echo esc_html($item['meta']['subject']); ?></p>

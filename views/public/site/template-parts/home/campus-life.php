@@ -42,13 +42,13 @@ if (empty($categories)) {
 		</div>
 
 		<?php foreach ($categories as $i => $cat) : ?>
-			<div data-tab-panel class="<?php echo 0 === (int) $i ? '' : 'hidden'; ?>">
+			<div data-tab-panel role="tabpanel" class="<?php echo 0 === (int) $i ? '' : 'hidden'; ?>">
 				<?php if (!empty($cat['photos']) && is_array($cat['photos'])) : ?>
 					<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
 						<?php foreach ($cat['photos'] as $photo) : ?>
 							<?php if (empty($photo['src'])) { continue; } ?>
 							<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-800 to-blue-600 aspect-square transition-transform duration-300 ease-out hover:scale-125 hover:z-20 hover:shadow-2xl">
-								<img src="<?php echo esc_url($photo['src']); ?>" alt="<?php echo esc_attr($photo['alt'] ?? ''); ?>" class="absolute inset-0 w-full h-full object-cover" />
+								<img src="<?php echo esc_url(vr_media_url($photo['src'])); ?>" alt="<?php echo esc_attr($photo['alt'] ?? ''); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" loading="lazy" />
 							</div>
 						<?php endforeach; ?>
 					</div>

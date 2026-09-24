@@ -41,7 +41,7 @@ $phoneTel = preg_replace('/\D+/', '', $phoneRaw) ?: '919256925640';
           <li>
             <a href="<?php echo esc_url(home_url('/blog/' . $r['slug'] . '/')); ?>" class="blog-sidebar__recent-link group">
               <span class="blog-sidebar__recent-thumb">
-                <img src="<?php echo esc_url($rImg); ?>" alt="" loading="lazy" class="w-full h-full object-cover">
+                <img src="<?php echo esc_url(vr_media_url($rImg)); ?>" alt="" loading="lazy" class="w-full h-full object-cover" decoding="async">
               </span>
               <span class="blog-sidebar__recent-body">
                 <?php if (!empty($r['published_at'])): ?>

@@ -61,7 +61,7 @@ get_header();
         <div class="blog-post-layout">
           <div class="blog-post-main min-w-0">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <img src="<?php echo esc_url($img); ?>" alt="<?php echo esc_attr($post['title'] ?? ''); ?>" class="w-full object-cover max-h-[420px]">
+              <img src="<?php echo esc_url(vr_media_url($img)); ?>" alt="<?php echo esc_attr($post['title'] ?? ''); ?>" class="w-full object-cover max-h-[420px]" decoding="async" loading="lazy">
               <div class="p-6 md:p-10">
                 <div class="blog-prose">
                   <?php echo Html::allowedHtml((string) ($post['body_html'] ?? '')); ?>
@@ -92,7 +92,7 @@ get_header();
           ?>
             <a href="<?php echo esc_url(home_url('/blog/' . $r['slug'] . '/')); ?>" class="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
               <div class="aspect-[16/10] overflow-hidden">
-                <img src="<?php echo esc_url($rImg); ?>" alt="<?php echo esc_attr($r['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                <img src="<?php echo esc_url(vr_media_url($rImg)); ?>" alt="<?php echo esc_attr($r['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async">
               </div>
               <div class="p-5">
                 <?php if (!empty($r['published_at'])): ?>

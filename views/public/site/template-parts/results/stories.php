@@ -28,16 +28,19 @@ $videos = !empty($s['items']) && is_array($s['items']) ? $s['items'] : array();
 				}
 				?>
 				<div class="bg-white rounded-2xl overflow-hidden shadow border border-gray-100">
-					<div class="aspect-video">
-						<iframe
-							class="w-full h-full"
-							src="https://www.youtube.com/embed/<?php echo esc_attr($embed); ?>"
-							title="<?php echo esc_attr($video['title'] ?? ''); ?>"
-							frameborder="0"
-							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-							allowfullscreen
-							loading="lazy"
-						></iframe>
+					<div class="aspect-video relative bg-blue-950" data-yt-facade data-yt-id="<?php echo esc_attr($embed); ?>">
+						<?php // The YouTube player is ~500 KB of script per video; load it on click. ?>
+						<button type="button" class="group absolute inset-0 w-full h-full" aria-label="<?php echo esc_attr(sprintf('Play video: %s', $video['title'] ?? '')); ?>">
+							<img
+								src="https://i.ytimg.com/vi/<?php echo esc_attr($embed); ?>/hqdefault.jpg"
+								alt="" aria-hidden="true" loading="lazy" decoding="async" width="480" height="360"
+								class="absolute inset-0 w-full h-full object-cover" />
+							<span class="absolute inset-0 flex items-center justify-center">
+								<span class="flex items-center justify-center w-16 h-16 rounded-full bg-black/60 group-hover:bg-orange-500 transition-colors">
+									<svg viewBox="0 0 24 24" width="28" height="28" fill="#fff" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+								</span>
+							</span>
+						</button>
 					</div>
 					<div class="p-5">
 						<h3 class="font-bold text-blue-900"><?php echo esc_html($video['title'] ?? ''); ?></h3>

@@ -26,10 +26,11 @@ if (empty($steps)) {
 			<?php endif; ?>
 		</div>
 
-		<div class="flex flex-wrap justify-center gap-3 md:gap-4 mb-10">
+		<div role="tablist" class="flex flex-wrap justify-center gap-3 md:gap-4 mb-10">
 			<?php foreach ($steps as $i => $step) : ?>
 				<button
 					type="button"
+					role="tab"
 					data-tab-btn
 					data-active-class="bg-blue-900 text-white shadow-lg"
 					data-inactive-class="bg-white text-blue-900 border border-gray-200 hover:border-blue-900"
@@ -41,11 +42,11 @@ if (empty($steps)) {
 		</div>
 
 		<?php foreach ($steps as $i => $step) : ?>
-			<div data-tab-panel class="border border-gray-100 rounded-3xl bg-gray-50 p-4 md:p-8 <?php echo 0 === (int) $i ? '' : 'hidden'; ?>">
+			<div data-tab-panel role="tabpanel" class="border border-gray-100 rounded-3xl bg-gray-50 p-4 md:p-8 <?php echo 0 === (int) $i ? '' : 'hidden'; ?>">
 				<div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
 					<div class="relative h-[220px] md:h-[380px] rounded-3xl overflow-hidden shadow-lg">
 						<?php if (!empty($step['image'])) : ?>
-							<img src="<?php echo esc_url($step['image']); ?>" alt="<?php echo esc_attr($step['heading'] ?? $step['title'] ?? ''); ?>" class="absolute inset-0 w-full h-full object-cover" />
+							<img src="<?php echo esc_url(vr_media_url($step['image'])); ?>" alt="<?php echo esc_attr($step['heading'] ?? $step['title'] ?? ''); ?>" class="absolute inset-0 w-full h-full object-cover" decoding="async" loading="lazy" />
 						<?php else : ?>
 							<div class="absolute inset-0 bg-blue-900"></div>
 						<?php endif; ?>

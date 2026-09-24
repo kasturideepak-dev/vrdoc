@@ -26,7 +26,7 @@ if (empty($items)) {
 				<article class="bg-blue-50/40 rounded-2xl border border-gray-200 p-6 shadow-lg">
 					<div class="flex items-center gap-3">
 						<?php if (!empty($t['image'])) : ?>
-							<img src="<?php echo esc_url($t['image']); ?>" alt="<?php echo esc_attr($t['name'] ?? ''); ?>" class="rounded-full object-cover border-2 border-orange-500 w-14 h-14" width="56" height="56" />
+							<img src="<?php echo esc_url(vr_media_url($t['image'])); ?>" alt="<?php echo esc_attr($t['name'] ?? ''); ?>" class="rounded-full object-cover border-2 border-orange-500 w-14 h-14" width="56" height="56" decoding="async" loading="lazy" />
 						<?php else : ?>
 							<div class="rounded-full border-2 border-orange-500 w-14 h-14 bg-orange-100 flex items-center justify-center shrink-0" aria-hidden="true">
 								<i class="fa-solid fa-user text-orange-600"></i>
