@@ -53,6 +53,23 @@ function asset_version(string $file): string
     return $t ? '?v=' . base_convert((string) $t, 10, 36) : '';
 }
 
+/**
+ * Cache-busting URL for any local asset path (images included).
+ *
+ * Hostinger's CDN caches by URL and ignores our Cache-Control, so a replaced
+ * image keeps serving the old bytes for days. Appending the file's timestamp
+ * gives changed files a new URL immediately.
+ */
+function vr_media_url(string $url): string
+{
+    if ($url === '' || !str_starts_with($url, '/assets/') || str_contains($url, '?')) {
+        return $url;
+    }
+    // Some files were uploaded with spaces in the name ("academics 1.webp").
+    $encoded = implode('/', array_map(static fn ($seg) => rawurlencode(rawurldecode($seg)), explode('/', $url)));
+    return $encoded . asset_version(ROOT . rawurldecode($url));
+}
+
 /** Versioned URL for a file under assets/ (public site). */
 function site_asset(string $asset, string $path): string
 {

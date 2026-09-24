@@ -86,10 +86,27 @@ final class Theme
         echo '<link rel="icon" href="' . $e($favicon) . '">' . "\n";
         echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
         echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-        echo '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">' . "\n";
-        echo '<script src="https://cdn.tailwindcss.com"></script>' . "\n";
-        echo '<script>tailwind.config = { theme: { extend: { fontFamily: { sans: [\'Inter\', \'system-ui\', \'sans-serif\'], display: [\'"Plus Jakarta Sans"\', \'Inter\', \'system-ui\', \'sans-serif\'] } } } };</script>' . "\n";
-        echo '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">' . "\n";
+        // The hero image is the largest element on the homepage; the browser
+        // only discovers it after the HTML parses, so point at it early.
+        if ((Request::path() === '/' || Request::path() === '') && function_exists('vr_get_home_hero')) {
+            $slides = vr_get_home_hero()['slides'] ?? [];
+            $firstImage = (string) ($slides[0]['image'] ?? '');
+            if ($firstImage !== '') {
+                // Same URL the <img> will request (versioned), or it downloads twice.
+                echo '<link rel="preload" as="image" fetchpriority="high" href="' . $e(vr_media_url($firstImage)) . '">' . "\n";
+            }
+        }
+        // Fonts and icons load without blocking the first paint: the browser
+        // paints with system fonts, then swaps. Tailwind is a prebuilt file
+        // (see build/README.md); the Play CDN used to ship a compiler here.
+        $async = static function (string $href) use ($e): void {
+            echo '<link rel="stylesheet" href="' . $e($href) . '" media="print" onload="this.media=\'all\';this.onload=null">' . "\n";
+            echo '<noscript><link rel="stylesheet" href="' . $e($href) . '"></noscript>' . "\n";
+        };
+        $async('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+        echo '<link rel="stylesheet" href="' . $e(site_asset('/assets/', 'site/css/tailwind.css')) . '">' . "\n";
+        echo '<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>' . "\n";
+        $async('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
         echo '<link rel="stylesheet" href="' . $e(VR_DOCTORS_URI . '/style.css?v=' . VR_DOCTORS_VERSION) . '">' . "\n";
         foreach ($GLOBALS['vr_extra_stylesheets'] ?? [] as $href) {
             if (is_string($href) && $href !== '') {

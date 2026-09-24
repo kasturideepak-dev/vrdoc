@@ -22,21 +22,28 @@ Options -Indexes
 
 <IfModule mod_expires.c>
   ExpiresActive On
-  ExpiresByType text/css "access plus 7 days"
-  ExpiresByType application/javascript "access plus 7 days"
-  ExpiresByType image/jpeg "access plus 30 days"
-  ExpiresByType image/png "access plus 30 days"
-  ExpiresByType image/webp "access plus 30 days"
-  ExpiresByType image/svg+xml "access plus 30 days"
-  ExpiresByType font/woff2 "access plus 30 days"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 180 days"
+  ExpiresByType image/png "access plus 180 days"
+  ExpiresByType image/webp "access plus 180 days"
+  ExpiresByType image/svg+xml "access plus 180 days"
+  ExpiresByType font/woff2 "access plus 180 days"
 </IfModule>
 
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
-  <FilesMatch "\.(css|js|jpg|jpeg|png|gif|webp|svg|woff2)$">
-    Header set Cache-Control "public, max-age=604800"
+  # CSS and JS URLs carry ?v=<file time> (see asset_version() in app/helpers.php),
+  # so a changed file gets a new URL and can be cached hard.
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  # Image and font URLs are not versioned: cache long, but not forever, so
+  # replacing a file in the media library still reaches visitors.
+  <FilesMatch "\.(jpg|jpeg|png|gif|webp|avif|svg|woff2|woff|ico)$">
+    Header set Cache-Control "public, max-age=15552000"
   </FilesMatch>
 </IfModule>
 
