@@ -107,7 +107,9 @@ final class Slug
         $try = $base;
         $i = 2;
         while (true) {
-            $sql = 'SELECT id FROM pages WHERE slug = ? AND deleted_at IS NULL';
+            // Trashed rows still hold their slug in the unique index, so they
+            // count as taken here — otherwise saving throws a duplicate key.
+            $sql = 'SELECT id FROM pages WHERE slug = ?';
             $params = [$try];
             if ($ignoreId) {
                 $sql .= ' AND id <> ?';
@@ -128,7 +130,8 @@ final class Slug
         $try = $base;
         $i = 2;
         while (true) {
-            $sql = 'SELECT id FROM cpt_entries WHERE post_type_id = ? AND slug = ? AND deleted_at IS NULL';
+            // Trashed entries keep their slug in the unique index (see uniquePage).
+            $sql = 'SELECT id FROM cpt_entries WHERE post_type_id = ? AND slug = ?';
             $params = [$typeId, $try];
             if ($ignoreId) {
                 $sql .= ' AND id <> ?';

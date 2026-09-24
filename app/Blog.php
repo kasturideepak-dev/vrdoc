@@ -21,13 +21,43 @@ final class Blog
         }
     }
 
+    /**
+     * Seed the three demo posts once, on a site that has never had them.
+     *
+     * This runs on every public request, so it must be cheap and it must never
+     * be able to take the site down: a duplicate-key error in here returned
+     * 500 for every page once the demo posts were trashed. After the first
+     * run a settings flag short-circuits it, which also means posts the client
+     * deletes stay deleted.
+     */
     public static function ensurePosts(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        try {
+            if (Settings::get('blog_demo_seeded_v1') === '1') {
+                return;
+            }
+            self::seedDemoPosts();
+            Settings::set('blog_demo_seeded_v1', '1');
+        } catch (Throwable $e) {
+            error_log('Blog::ensurePosts: ' . $e->getMessage());
+        }
+    }
+
+    private static function seedDemoPosts(): void
     {
         self::ensureCategories();
         $authorId = (int) (Database::one('SELECT id FROM users ORDER BY id LIMIT 1')['id'] ?? 0);
         $posts = self::demoPosts();
         foreach ($posts as $p) {
-            $exists = Database::one('SELECT id FROM blog_posts WHERE slug = ? AND deleted_at IS NULL', [$p['slug']]);
+            // The slug is unique across ALL rows, trashed ones included, so this
+            // must not filter on deleted_at: trashing a demo post made this try
+            // to re-insert it, and the duplicate-key error took the site down.
+            $exists = Database::one('SELECT id FROM blog_posts WHERE slug = ?', [$p['slug']]);
             if ($exists) {
                 continue;
             }
