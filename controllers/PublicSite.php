@@ -436,6 +436,7 @@ final class PublicSite
         View::public('site/post', self::ctx([
             'post' => $post,
             'seo' => $seo,
+            'faqItems' => Blog::faqItems($post),
             'related' => $related,
             'categories' => $cats,
             'allCategories' => $allCategories,

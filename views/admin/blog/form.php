@@ -33,6 +33,32 @@
     </div>
   </label>
   <label class="lab">Tags (comma separated) <input name="tags" value="<?= Html::e($selectedTagNames ?? '') ?>"></label>
+  <?php $faqItems = $faqItems ?? []; ?>
+  <section class="panel faq-editor" data-faq-editor>
+    <header class="panel-head panel-head--row">
+      <div>
+        <h2>FAQ section</h2>
+        <p>Shown as an accordion at the end of the post, and submitted to Google as FAQ data. Leave empty to hide the section.</p>
+      </div>
+      <button class="btn-ghost" type="button" data-faq-add>Add question</button>
+    </header>
+    <div class="panel-body">
+      <div data-faq-rows>
+        <?php foreach ($faqItems as $i => $f): ?>
+          <div class="faq-row" data-faq-row>
+            <span class="faq-row__grip" aria-hidden="true">⋮⋮</span>
+            <div class="faq-row__fields">
+              <label class="lab">Question <input name="faq_q[]" value="<?= Html::e($f['question']) ?>" placeholder="e.g. Who can apply for this programme?"></label>
+              <label class="lab">Answer <textarea name="faq_a[]" rows="3" placeholder="Keep it short and direct."><?= Html::e($f['answer']) ?></textarea></label>
+            </div>
+            <button class="act act--danger" type="button" data-faq-remove title="Remove this question"><?= admin_icon('trash') ?><span>Remove</span></button>
+          </div>
+        <?php endforeach; ?>
+      </div>
+      <p class="faq-editor__empty" data-faq-empty <?= $faqItems ? 'hidden' : '' ?>>No questions yet — add the ones people actually ask about this topic.</p>
+    </div>
+  </section>
+
   <?php $seo = $seo ?? []; require ROOT . '/views/admin/partials/seo.php'; ?>
   <button class="btn" type="submit">Save</button>
 </form>

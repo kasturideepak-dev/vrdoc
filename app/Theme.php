@@ -117,6 +117,9 @@ final class Theme
                 echo '<link rel="stylesheet" href="' . $e($href) . '">' . "\n";
             }
         }
+        if (!empty($GLOBALS['vr_extra_schema'])) {
+            echo '<script type="application/ld+json">' . $GLOBALS['vr_extra_schema'] . '</script>' . "\n";
+        }
         if (!empty($s['schema_json'])) {
             echo '<script type="application/ld+json">' . $s['schema_json'] . '</script>' . "\n";
         }

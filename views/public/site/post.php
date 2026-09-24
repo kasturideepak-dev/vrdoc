@@ -19,6 +19,19 @@ if ($img === '') {
 $pubDate = !empty($post['published_at']) ? date('j F Y', strtotime($post['published_at'])) : '';
 $pubIso = !empty($post['published_at']) ? substr($post['published_at'], 0, 10) : '';
 
+$faqItems = $faqItems ?? [];
+if ($faqItems) {
+    $GLOBALS['vr_extra_schema'] = Html::jsonLd([
+        '@context' => 'https://schema.org',
+        '@type' => 'FAQPage',
+        'mainEntity' => array_map(static fn (array $f): array => [
+            '@type' => 'Question',
+            'name' => $f['question'],
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['answer']],
+        ], $faqItems),
+    ]);
+}
+
 get_header();
 ?>
 <main id="content" class="is-blog-post">
@@ -66,6 +79,26 @@ get_header();
                 <div class="blog-prose">
                   <?php echo Html::allowedHtml((string) ($post['body_html'] ?? '')); ?>
                 </div>
+
+                <?php // FAQ items come from the post's own FAQ section in the admin. ?>
+                <?php if (!empty($faqItems)): ?>
+                  <section class="mt-10 pt-8 border-t border-gray-100" data-faq-accordion aria-labelledby="post-faq-title">
+                    <h2 id="post-faq-title" class="text-2xl md:text-3xl font-bold text-blue-900">Frequently asked questions</h2>
+                    <div class="mt-6 space-y-3">
+                      <?php foreach ($faqItems as $index => $faq): $isOpen = 0 === $index; ?>
+                        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden" data-faq-item>
+                          <button type="button" class="w-full flex items-start justify-between gap-4 px-5 py-4 md:px-6 md:py-5 text-left" data-faq-toggle aria-expanded="<?php echo $isOpen ? 'true' : 'false'; ?>">
+                            <span class="text-sm md:text-base font-bold text-blue-900 leading-snug"><?php echo esc_html($faq['question']); ?></span>
+                            <i class="fa-solid fa-chevron-down text-orange-500 mt-1 shrink-0 transition-transform duration-200 <?php echo $isOpen ? 'rotate-180' : ''; ?>" data-faq-icon></i>
+                          </button>
+                          <div class="px-5 pb-5 md:px-6 md:pb-6 -mt-1 <?php echo $isOpen ? '' : 'hidden'; ?>" data-faq-panel>
+                            <p class="text-sm md:text-base text-gray-600 leading-relaxed"><?php echo nl2br(esc_html($faq['answer'])); ?></p>
+                          </div>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+                  </section>
+                <?php endif; ?>
               </div>
             </div>
           </div>

@@ -31,6 +31,7 @@ final class AdminBlog
             View::redirect('/admin/blog/?trash=1');
         }
         Auth::requirePerm($row ? 'blog.edit' : 'blog.create');
+        Blog::ensureSchema();
         $cats = Database::all('SELECT * FROM blog_categories ORDER BY name');
         $tags = Database::all('SELECT * FROM blog_tags ORDER BY name');
         $selectedCats = $row ? array_column(Database::all('SELECT category_id FROM blog_post_categories WHERE post_id = ?', [(int) $row['id']]), 'category_id') : [];
@@ -50,6 +51,7 @@ final class AdminBlog
             'selectedCats' => $selectedCats,
             'selectedTags' => $selectedTags,
             'selectedTagNames' => $selectedTagNames,
+            'faqItems' => $row ? Blog::faqItems($row) : [],
             'seo' => $seo,
         ]);
     }
@@ -58,6 +60,7 @@ final class AdminBlog
     {
         $id = Request::int('id');
         Auth::requirePerm($id ? 'blog.edit' : 'blog.create');
+        Blog::ensureSchema();
         $old = $id ? Database::one('SELECT * FROM blog_posts WHERE id = ?', [$id]) : null;
         if ($id && !$old) {
             http_response_code(404);
@@ -87,6 +90,7 @@ final class AdminBlog
             'slug' => $slug,
             'excerpt' => Request::str('excerpt'),
             'body_html' => Html::allowedHtml((string) ($_POST['body_html'] ?? '')),
+            'faq_json' => Blog::faqFromRequest(),
             'featured_image' => Request::str('featured_image'),
             'author_id' => Request::int('author_id') ?: Auth::id(),
             'status' => $status,

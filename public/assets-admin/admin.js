@@ -728,4 +728,42 @@
       drop.closest("form").requestSubmit();
     });
   }
+
+  /* ——— Blog FAQ editor: add / remove question rows ——— */
+  (function () {
+    var editor = document.querySelector("[data-faq-editor]");
+    if (!editor) return;
+    var rows = editor.querySelector("[data-faq-rows]");
+    var empty = editor.querySelector("[data-faq-empty]");
+    function sync() {
+      if (empty) empty.hidden = rows.children.length > 0;
+    }
+    function addRow() {
+      var row = document.createElement("div");
+      row.className = "faq-row";
+      row.setAttribute("data-faq-row", "");
+      row.innerHTML =
+        '<span class="faq-row__grip" aria-hidden="true">\u22ee\u22ee</span>' +
+        '<div class="faq-row__fields">' +
+        '<label class="lab">Question <input name="faq_q[]" placeholder="e.g. Who can apply for this programme?"></label>' +
+        '<label class="lab">Answer <textarea name="faq_a[]" rows="3" placeholder="Keep it short and direct."></textarea></label>' +
+        "</div>" +
+        '<button class="act act--danger" type="button" data-faq-remove title="Remove this question">Remove</button>';
+      rows.appendChild(row);
+      sync();
+      var input = row.querySelector("input");
+      if (input) input.focus();
+    }
+    var addBtn = editor.querySelector("[data-faq-add]");
+    if (addBtn) addBtn.addEventListener("click", addRow);
+    editor.addEventListener("click", function (e) {
+      var rm = e.target.closest("[data-faq-remove]");
+      if (!rm) return;
+      var row = rm.closest("[data-faq-row]");
+      if (row) row.remove();
+      sync();
+    });
+    sync();
+  })();
+
 })();

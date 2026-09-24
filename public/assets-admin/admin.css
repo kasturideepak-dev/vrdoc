@@ -1005,3 +1005,10 @@ td:has(> .row-actions) { width: 1%; white-space: nowrap; }
   .act { padding: 0 8px; }
   .act span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+
+/* ——— Blog FAQ editor ——— */
+.faq-editor__empty { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+.faq-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass-2); }
+.faq-row__grip { color: var(--muted); line-height: 1.6; user-select: none; }
+.faq-row__fields { flex: 1; min-width: 0; display: grid; gap: 8px; }
+.faq-row__fields textarea { min-height: 64px; resize: vertical; }

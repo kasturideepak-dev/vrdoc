@@ -13,6 +13,18 @@ final class Html
         return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
     }
 
+    /**
+     * JSON safe to embed inside a <script> tag: "<", ">", "&", quotes are
+     * escaped, so text containing "</script>" cannot close the block.
+     */
+    public static function jsonLd($data): string
+    {
+        return json_encode(
+            $data,
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        ) ?: '{}';
+    }
+
     public static function lines(string $text): array
     {
         $out = [];

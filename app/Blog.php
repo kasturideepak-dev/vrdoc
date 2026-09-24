@@ -6,6 +6,72 @@ declare(strict_types=1);
  */
 final class Blog
 {
+    /** Blog posts keep their FAQ items in a JSON column. */
+    public static function ensureSchema(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        try {
+            if (!Database::all("SHOW COLUMNS FROM blog_posts LIKE 'faq_json'")) {
+                Database::pdo()->exec('ALTER TABLE blog_posts ADD COLUMN faq_json TEXT NULL AFTER body_html');
+            }
+        } catch (Throwable $e) {
+            error_log('Blog::ensureSchema: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * FAQ items for a post, as [['question' => ..., 'answer' => ...], ...].
+     *
+     * @return list<array{question:string,answer:string}>
+     */
+    public static function faqItems(array $post): array
+    {
+        $raw = $post['faq_json'] ?? '';
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+        $rows = json_decode($raw, true);
+        if (!is_array($rows)) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $q = trim((string) ($r['question'] ?? ''));
+            $a = trim((string) ($r['answer'] ?? ''));
+            if ($q !== '' && $a !== '') {
+                $out[] = ['question' => $q, 'answer' => $a];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Build the stored value from posted faq_q[]/faq_a[] pairs. Rows where
+     * either side is blank are dropped, so an empty row just disappears.
+     */
+    public static function faqFromRequest(): ?string
+    {
+        $qs = (array) ($_POST['faq_q'] ?? []);
+        $as = (array) ($_POST['faq_a'] ?? []);
+        $items = [];
+        foreach ($qs as $i => $q) {
+            $q = trim((string) $q);
+            $a = trim((string) ($as[$i] ?? ''));
+            if ($q === '' || $a === '') {
+                continue;
+            }
+            $items[] = ['question' => mb_substr($q, 0, 300), 'answer' => mb_substr($a, 0, 2000)];
+            if (count($items) >= 30) {
+                break;
+            }
+        }
+        return $items ? Html::json($items) : null;
+    }
+
     public static function ensureCategories(): void
     {
         $cats = [
